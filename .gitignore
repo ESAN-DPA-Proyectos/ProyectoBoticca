@@ -1,0 +1,23 @@
+# Ignore build artifacts
+/build/
+nbproject/private/
+dist/
+*.class
+*.log
+
+# Ignore IDE settings
+*.iml
+.idea/
+*.ipr
+*.iws
+
+# Ignore OS-specific files
+.DS_Store
+Thumbs.db
+
+# Java libraries
+*.jar
+
+# Backup files
+*~
+
