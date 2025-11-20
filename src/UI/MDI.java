@@ -325,6 +325,9 @@ public class MDI extends javax.swing.JFrame {
 
     private void sMnuRolActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_sMnuRolActionPerformed
         // TODO add your handling code here:
+        FrmRol frm = new FrmRol();
+        this.escritorio.add(frm);   // nombre real de tu desktop
+        frm.setVisible(true);    
     }//GEN-LAST:event_sMnuRolActionPerformed
 
     private void sMnuContratoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_sMnuContratoActionPerformed

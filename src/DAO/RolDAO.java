@@ -11,7 +11,7 @@ public class RolDAO {
     public Vector<Rol> listaRol(String cad){
         DbBean db=new DbBean();
                
-        Vector<Rol> listaArea = new Vector<Rol>();
+        Vector<Rol> listaRol = new Vector<Rol>();
         
         String sql;
         sql= "select * from rol ";
@@ -27,7 +27,7 @@ public class RolDAO {
                 rol.setRequisito(rstAreas.getString(3));
                 rol.setAniosexp(rstAreas.getInt(4));
                 rol.setSueldo(rstAreas.getInt(5));
-                listaArea.addElement(rol);
+                listaRol.addElement(rol);
             }
         }catch(java.sql.SQLException e){
             e.printStackTrace();
@@ -38,7 +38,7 @@ public class RolDAO {
             e.printStackTrace();
         }
                 
-        return listaArea;
+        return listaRol;
     }
     public void insertaRols(Rol rol){
         DbBean db=new DbBean();
@@ -65,31 +65,37 @@ public class RolDAO {
         }
                 
     }
-    public void actualizaRols(Rol rol){
-        DbBean db=new DbBean();
+    public void actualizaRols(Rol rol) {
+        DbBean db = new DbBean();
         String sql;
-        try{
-            sql="update rol set ";
-            sql=sql+" descRol = '"+rol.getDescripcion()+"', ";
-            sql=sql+" requisito = '"+rol.getRequisito()+"', ";
-            sql=sql+" anioexpreq = '"+rol.getAniosexp()+"' ";
-            sql=sql+" sueldo = '"+rol.getSueldo()+"' ";
-            sql=sql+"where RolID = "+rol.getId_rol()+"";
+
+        try {
+            sql = "UPDATE Rol SET ";
+            sql += "descRol = '" + rol.getDescripcion() + "', ";
+            sql += "requisito = '" + rol.getRequisito() + "', ";
+            sql += "anioExpReq = " + rol.getAniosexp() + ", ";
+            sql += "sueldo = " + rol.getSueldo() + " ";
+            sql += "WHERE RolID = " + rol.getId_rol();
+
+            System.out.println("\nSQL UPDATE ROL -> " + sql);   // para verlo en Output
+
             db.ejecutaSQL(sql);
-        }catch(java.sql.SQLException e){
+
+        } catch (java.sql.SQLException e) {
             e.printStackTrace();
-        }
-        try{
-            db.desconecta();
-        }catch(java.sql.SQLException e){
-            e.printStackTrace();
+        } finally {
+            try {
+                db.desconecta();
+            } catch (java.sql.SQLException e) {
+                e.printStackTrace();
+            }
         }
     }
     public boolean eliminaRols(int idRol){
         //verificando la no dependencia de la tabla det_venta
         boolean sw = false;
         DbBean db=new DbBean();       
-        Vector<Rol> listaRol = new Vector<Rol>();
+        //Vector<Rol> listaRol = new Vector<Rol>();
         
         String sql;
         sql= "select * from contrato where rolID= "+ idRol +"";
