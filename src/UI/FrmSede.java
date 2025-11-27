@@ -34,8 +34,9 @@ public class FrmSede extends javax.swing.JInternalFrame {
     }
     private void llenaTblSedes(String cad){
         
-        listaSede = sedeDao.listaSede(cad);
-        dtm.setRowCount(0); //vacía la tabla cada vez que se llene algo en el cuadro de busqueda
+        listaSede = sedeDao.listarSede(cad);   // antes: listaSede = sedeDao.listaSede(cad);
+        dtm.setRowCount(0);
+
         for(int i=0;i<listaSede.size();i++){
             Vector vec=new Vector();
             vec.addElement(listaSede.get(i).getId_sede());
@@ -47,8 +48,6 @@ public class FrmSede extends javax.swing.JInternalFrame {
         }
     }
     
-    
-
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
@@ -338,31 +337,48 @@ public class FrmSede extends javax.swing.JInternalFrame {
     }//GEN-LAST:event_txtBuscarKeyReleased
 
     private void btnGrabarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGrabarActionPerformed
-        if(valida()==true){
-            String msj;
+        if (valida()) {
+
             Util u = new Util();
-            
-            Sede sede = new Sede(); //se crea xq el procedimiento inserta proveedor requiere el parámetro de proveedor
-            
+            Sede sede = new Sede();
+
             sede.setId_ubigeo(Integer.parseInt(this.txtIdUbigeo.getText()));
             sede.setNombre(this.txtNombre.getText());
             sede.setDireccion(this.txtDireccion.getText());
             sede.setTelefono(this.txtTelefono.getText());
 
-            if(this.btnGrabar.getText().equals("Grabar")){ //se crea para autogenerar la llave
-                idSede=u.idNext("sede", "sedeID"); //es el nombre de la tabla y el nombre del campo de la llave primaria
+            int r;
+
+            // INSERTAR
+            if (this.btnGrabar.getText().equals("Grabar")) {
+
+                idSede = u.idNext("Sede", "SedeID");
                 sede.setId_sede(idSede);
-                this.sedeDao.insertaSedes(sede);
-                msj="Sede registrada satisfactoriamente";
-            }else{
+
+                r = this.sedeDao.insertarSede(sede);
+
+                if (r == 1) {
+                    JOptionPane.showMessageDialog(this, "Sede registrada satisfactoriamente");
+                } else {
+                    JOptionPane.showMessageDialog(this, "Error al registrar sede");
+                }
+
+            // ACTUALIZAR
+            } else {
+
                 sede.setId_sede(idSede);
-                this.sedeDao.actualizaSedes(sede);
-                msj="Sede actualizada satisfactoriamente";
+
+                r = this.sedeDao.actualizarSede(sede);
+
+                if (r == 1) {
+                    JOptionPane.showMessageDialog(this, "Sede actualizada satisfactoriamente");
+                } else {
+                    JOptionPane.showMessageDialog(this, "Error al actualizar sede");
+                }
             }
-            
+
             limpia();
             llenaTblSedes("");
-            JOptionPane.showMessageDialog(this, msj);
         }
     }//GEN-LAST:event_btnGrabarActionPerformed
 
@@ -397,15 +413,16 @@ public class FrmSede extends javax.swing.JInternalFrame {
     }//GEN-LAST:event_btnSalirActionPerformed
 
     private void btnEliminarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEliminarActionPerformed
-        //int idProd;
-        //idProd=Integer.parseInt(dtm.getValueAt(idx, 0).toString());
-        if(this.sedeDao.eliminaSedes(idSede)==true){
+        int r = this.sedeDao.eliminarSede(idSede);
+
+        if (r == 1) {
             JOptionPane.showMessageDialog(this, "Sede eliminada satisfactoriamente");
             this.llenaTblSedes("");
             limpia();
-        }else{
+        } else {
             JOptionPane.showMessageDialog(this, "No es posible eliminar la sede, consulte con el DBA");
         }
+
         limpia();
     }//GEN-LAST:event_btnEliminarActionPerformed
 
@@ -430,9 +447,9 @@ public class FrmSede extends javax.swing.JInternalFrame {
             String mensaje = "Hola,\n\nAdjunto encontrarás el reporte generado automáticamente.\n\nSaludos,\nSistema";
 
             List<Object> listaObjetos = new ArrayList<>(listaSede);
-            ByteArrayOutputStream outputStream = PdfGenerator.generarPDFDinamico(listaObjetos, "Reporte de Proveedores");
-            MailSender.sendEmail(txtEmail.getText(), "PDF PROVEEDOR", mensaje, "REPORTE DE PROVEEDORES", outputStream);
-            JOptionPane.showMessageDialog(this, "Se envio el pdf al correo: " + txtEmail.getText() + " correctamente");
+            ByteArrayOutputStream outputStream = PdfGenerator.generarPDFDinamico(listaObjetos, "Reporte de Sedes");
+            MailSender.sendEmail(txtEmail.getText(), "PDF SEDE", mensaje, "REPORTE DE SEDES", outputStream);
+            JOptionPane.showMessageDialog(this, "Se envió el pdf al correo: " + txtEmail.getText() + " correctamente");
             limpia();
         }
     }//GEN-LAST:event_btnPdfActionPerformed

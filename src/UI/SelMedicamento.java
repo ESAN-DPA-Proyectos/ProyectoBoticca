@@ -22,7 +22,7 @@ public class SelMedicamento extends javax.swing.JDialog {
     
     private void llenaTblSelMed(String cad){
         Vector<Medicamento> listaMed;
-        listaMed=medDao.listaMedicamentos(cad);
+        listaMed=medDao.listarMedicamentos(cad);
         dtm.setRowCount(0);
         for(int i=0; i<listaMed.size();i++){
             Vector vec=new Vector();

@@ -135,11 +135,11 @@ public class FrmEmpleado extends javax.swing.JInternalFrame {
 
             },
             new String [] {
-                "Id Proveedor", "Nombre", "Apellido", "Cargo", "Fecha Contrato", "Telefono", "Estado"
+                "Id Empleado", "Nombre", "Apellido", "Cargo", "Fecha Contrato", "Telefono", "Estado"
             }
         ) {
             boolean[] canEdit = new boolean [] {
-                false, false, false, false, false, true, true
+                false, false, false, false, false, false, false
             };
 
             public boolean isCellEditable(int rowIndex, int columnIndex) {
@@ -187,7 +187,7 @@ public class FrmEmpleado extends javax.swing.JInternalFrame {
 
         jLabel8.setText("Apellido");
 
-        jLabel9.setText("Fecha (yyyy-mm-dd)");
+        jLabel9.setText("Fecha (aaaa-mm-dd)");
 
         jLabel12.setText("Correo");
 

@@ -1012,17 +1012,22 @@ public class FrmVentas extends javax.swing.JFrame { //JFrame
     }// </editor-fold>//GEN-END:initComponents
 
     private void tblClienteMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblClienteMouseClicked
-        int idx;
-        idx=this.tblCliente.getSelectedRow();
-        clie.setId_cliente(Integer.parseInt(dtm.getValueAt(idx, 0).toString()));
-        this.txtClieCod.setText(String.valueOf(clie.getId_cliente()));
-
-        if(this.txtClieCod.getText().isEmpty()){
-            llenaTblCabVenta(true,"");
-        }else{
-
-            llenaTblCabVenta(true,this.txtClieCod.getText());
+        int idx = this.tblCliente.getSelectedRow();
+        if (idx == -1) {
+            return; // Nada seleccionado, no hacemos nada
         }
+
+        // Obtener directamente el ID del cliente desde la tabla
+        String idCli = this.tblCliente.getValueAt(idx, 0).toString().trim();
+        this.txtClieCod.setText(idCli);
+
+        // Cada vez que cambias de cliente:
+        // 1) recargas las ventas de ese cliente
+        // 2) limpias la selección de venta y su detalle
+        llenaTblCabVenta(true, idCli);
+
+        this.txtCabCod.setText("");
+        dtml3.setRowCount(0);  // limpia la tabla tblDetVenta
     }//GEN-LAST:event_tblClienteMouseClicked
 
     private void txtBuscarKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtBuscarKeyReleased
@@ -1096,77 +1101,75 @@ public class FrmVentas extends javax.swing.JFrame { //JFrame
         int idDetVent;
         DbBean con = new DbBean();
         String fech;
-        if(this.btnGrabar.getText().equals("Grabar")){
-            if(this.txtIdCliente.getText().isEmpty() || dtml2.getRowCount()==0 || 
-                    this.txtSede.getText().isEmpty() || this.txtEmpleado.getText().isEmpty()){
-                JOptionPane.showMessageDialog(this, "Debe seleccionar un ciente y por lo menos un producto");
-            }else{
+
+        // MODO 1: GRABAR NUEVA VENTA
+        if (this.btnGrabar.getText().equals("Grabar")) {
+            if (this.txtIdCliente.getText().isEmpty()
+                    || dtml2.getRowCount() == 0
+                    || this.txtSede.getText().isEmpty()
+                    || this.txtEmpleado.getText().isEmpty()) {
+
+                JOptionPane.showMessageDialog(this,
+                        "Debe seleccionar un cliente y por lo menos un producto");
+            } else {
                 // Insertando en la cabecera: cab_venta
-                idVent=u.idNext("ventas", "ventaid"); //tabla,campo llave
-                fech=u.obtenerFecha();
-                cab_venta cv= new cab_venta();
+                idVent = u.idNext("ventas", "ventaid"); // tabla, campo llave
+                fech = u.obtenerFecha();
+                cab_venta cv = new cab_venta();
                 cv.setId_venta(idVent);
                 cv.setId_cliente(Integer.parseInt(this.txtIdCliente.getText()));
                 cv.setId_empleado(Integer.parseInt(this.txtIdEmpleado.getText()));
                 cv.setFecha(fech);
                 cv.setId_sede(Integer.parseInt(this.txtIdSede.getText()));
                 cv.setEstado(1);
-                this.cabDao.procesaItem(cv,"insert");
+                this.cabDao.procesaItem(cv, "insert");
 
                 // Insertando en el detalle: det_venta
-                for(int i=0;i<dtml2.getRowCount();i++){
-                    det_venta dv=new det_venta();
-                    idDetVent=u.idNext("DetallesVenta", "detalleventaid"); //tabla,campo llave
+                for (int i = 0; i < dtml2.getRowCount(); i++) {
+                    det_venta dv = new det_venta();
+                    idDetVent = u.idNext("DetallesVenta", "detalleventaid"); // tabla,campo llave
                     dv.setId_detventa(idDetVent);
                     dv.setId_venta(idVent);
-                    dv.setId_medicamento(Integer.parseInt(dtml2.getValueAt(i,0).toString()));
+                    dv.setId_medicamento(Integer.parseInt(dtml2.getValueAt(i, 0).toString()));
                     dv.setCantidad(Integer.parseInt(dtml2.getValueAt(i, 3).toString()));
-                    dv.setPreciounit(Float.parseFloat(dtml2.getValueAt(i,4).toString()));
+                    dv.setPreciounit(Float.parseFloat(dtml2.getValueAt(i, 4).toString()));
                     this.detDao.procesaItem(dv, "insert");
                 }
+
                 limpiaCabecera();
                 limpiaDetalle();
-                //dtml.setRowCount(0);
                 JOptionPane.showMessageDialog(this, "Venta registrada satisfactoriamente");
+
+                // Refrescar pestaña "Buscar Ventas"
+                llenaTblCabVenta(false, "");
+                llenaTblDetVenta(false, "");
+                this.jTabbedPane1.setSelectedIndex(0);
             }
-        }else if(this.btnGrabar.getText().equals("Actualizar cabecera")){
-            if(this.txtSede2.getText().isEmpty() || this.txtEmpleado2.getText().isEmpty()){
-                JOptionPane.showMessageDialog(this, "Debe seleccionar un empleado y sede");
-            }else{
-                // Actualizando la cabecera: cab_venta
-                //idVent=u.idNext("ventas", "ventaid"); //tabla,campo llave
-                fech=u.obtenerFecha();
-                cab_venta cv= new cab_venta();
-                //cv.setId_venta(idVent);
-                cv.setId_venta(Integer.parseInt(this.txtCabCod.getText()));
-                cv.setId_empleado(Integer.parseInt(this.txtIdEmpleado.getText()));
-                cv.setFecha(fech);
-                cv.setId_sede(Integer.parseInt(this.txtIdSede.getText()));
-                if(this.cmbEstado.getSelectedItem().toString().equals("Activo")){
-                    cv.setEstado(1);
-                    }else{
-                    cv.setEstado(0);
-                }
-                this.cabDao.procesaItem(cv,"update");
-                llenaTblActCabVenta(false,"");
-                this.jTabbedPane1.setSelectedIndex(2);
-                JOptionPane.showMessageDialog(this, "Venta actualizada satisfactoriamente");
-            }
-        }else{
-            if(this.txtMed2.getText().isEmpty() || this.txtPrecioUnit2.getText().isEmpty() || this.txtCantidad2.getText().isEmpty()){
-                JOptionPane.showMessageDialog(this, "Debe seleccionar un medicamento y elegir la cantidad");
-            }else{
-                det_venta dv=new det_venta();
+
+        // MODO 2: ACTUALIZAR DETALLE (pestaña Actualizar)
+        } else { 
+            if (this.txtMed2.getText().isEmpty()
+                    || this.txtPrecioUnit2.getText().isEmpty()
+                    || this.txtCantidad2.getText().isEmpty()) {
+
+                JOptionPane.showMessageDialog(this,
+                        "Debe seleccionar un medicamento y elegir la cantidad");
+            } else {
+                det_venta dv = new det_venta();
                 dv.setId_detventa(Integer.parseInt(this.txtDetCod.getText()));
                 dv.setId_medicamento(Integer.parseInt(this.txtIdMed.getText()));
                 dv.setCantidad(Integer.parseInt(this.txtCantidad2.getText()));
                 dv.setPreciounit(Float.parseFloat(this.txtPrecioUnit2.getText()));
                 this.detDao.procesaItem(dv, "update");
-                llenaTblActDetVenta(false,"");
+
+                // Recargar detalle en pestaña Actualizar
+                llenaTblActDetVenta(true, this.txtCabCod.getText());
                 this.jTabbedPane1.setSelectedIndex(2);
                 JOptionPane.showMessageDialog(this, "Detalle actualizado satisfactoriamente");
             }
         }
+
+        // limpiar la tabla temporal del registro de venta
         dtml2.setRowCount(0);
     }//GEN-LAST:event_btnGrabarActionPerformed
 
@@ -1208,17 +1211,16 @@ public class FrmVentas extends javax.swing.JFrame { //JFrame
     }//GEN-LAST:event_btnBuscarEmpleadoActionPerformed
 
     private void tblCabVentaMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblCabVentaMouseClicked
-        int idx;
-        idx=this.tblCabVenta.getSelectedRow();
-        cab.setId_venta(Integer.parseInt(dtml.getValueAt(idx, 0).toString()));
-        this.txtCabCod.setText(String.valueOf(cab.getId_venta()));
-
-        if(this.txtCabCod.getText().isEmpty()){
-            llenaTblDetVenta(true,"");
-        }else{
-
-            llenaTblDetVenta(true,this.txtCabCod.getText());
+        int idx = this.tblCabVenta.getSelectedRow();
+        if (idx == -1) {
+            return;
         }
+
+        String idVenta = this.tblCabVenta.getValueAt(idx, 0).toString().trim();
+        this.txtCabCod.setText(idVenta);
+
+        // Cargar siempre el detalle de la venta seleccionada
+        llenaTblDetVenta(true, idVenta);
     }//GEN-LAST:event_tblCabVentaMouseClicked
 
     private void txtEmpleadoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtEmpleadoActionPerformed
@@ -1226,19 +1228,102 @@ public class FrmVentas extends javax.swing.JFrame { //JFrame
     }//GEN-LAST:event_txtEmpleadoActionPerformed
 
     private void btnBorrarVentaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBorrarVentaActionPerformed
-        int idVe;
-        idVe=Integer.parseInt(txtCabCod.getText());
-        this.detDao.borraDeta(idVe);
-        this.cabDao.borraCab(idVe);
-        limpiaPrimeraHoja();
-        //System.out.println(idVe);
+        // 1. Validar que exista código de cabecera seleccionado
+        if (txtCabCod.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "No hay una venta seleccionada.",
+                    "Aviso",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // 2. Confirmar con el usuario
+        int opcion = JOptionPane.showConfirmDialog(this,
+                "¿Está seguro de eliminar la venta y todos sus detalles?",
+                "Confirmar eliminación",
+                JOptionPane.YES_NO_OPTION);
+
+        if (opcion != JOptionPane.YES_OPTION) {
+            return;    // el usuario canceló
+        }
+
+        // 3. Ejecutar borrado: primero detalle, luego cabecera
+        int idVe = Integer.parseInt(txtCabCod.getText());
+
+        // Elimina TODOS los detalles de esa venta (SP vía det_ventaDAO)
+        detDao.borraDeta(idVe);
+
+        // Elimina la cabecera (SP vía cab_ventaDAO)
+        cabDao.borraCab(idVe);
+
+        // Como borraCab es void, asumimos éxito si no lanzó excepción
+        int r = 1;
+
+        // 4. Evaluar resultado y refrescar pantallas
+        if (r > 0) {
+            JOptionPane.showMessageDialog(this,
+                    "Venta eliminada correctamente.",
+                    "Información",
+                    JOptionPane.INFORMATION_MESSAGE);
+
+            // Pestaña BUSCAR: limpia filtros y recarga tablas
+            limpiaPrimeraHoja();               // txtClieCod, txtCabCod, tblCabVenta, tblDetVenta
+
+            // Pestaña ACTUALIZAR: recarga cabeceras y detalles
+            llenaTblActCabVenta(false, "");
+            llenaTblActDetVenta(false, "");
+
+            // Dejamos el botón en modo registro por si estabas actualizando
+            btnGrabar.setText("Grabar");
+        } else {
+            JOptionPane.showMessageDialog(this,
+                    "No se pudo eliminar la venta.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
     }//GEN-LAST:event_btnBorrarVentaActionPerformed
 
     private void btnBorrarDetalleActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBorrarDetalleActionPerformed
-        int idVe;
-        idVe=Integer.parseInt(txtDetCod.getText());
-        this.detDao.borraDetaUnit(idVe);
-        limpiaPrimeraHoja();
+        // 1. Validar que exista un detalle seleccionado
+        if (txtDetCod.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "No hay un detalle de venta seleccionado.",
+                    "Aviso",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // 2. Confirmar con el usuario
+        int opcion = JOptionPane.showConfirmDialog(this,
+                "¿Está seguro de eliminar este detalle de la venta?",
+                "Confirmar eliminación",
+                JOptionPane.YES_NO_OPTION);
+
+        if (opcion != JOptionPane.YES_OPTION) {
+            return;   // el usuario canceló
+        }
+
+        // 3. Si confirmó, eliminamos el detalle
+        int idDet = Integer.parseInt(txtDetCod.getText());
+
+        try {
+            // borraDetaUnit elimina por DetalleVentaID en det_ventaDAO
+            this.detDao.borraDetaUnit(idDet);
+
+            // 4. Avisar y limpiar/recargar pantallas
+            JOptionPane.showMessageDialog(this,
+                    "Detalle de venta eliminado correctamente.",
+                    "Información",
+                    JOptionPane.INFORMATION_MESSAGE);
+
+            limpiaPrimeraHoja();
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this,
+                    "No se pudo eliminar el detalle de la venta.\n" + e.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
     }//GEN-LAST:event_btnBorrarDetalleActionPerformed
 
     private void tblDetVentaMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblDetVentaMouseClicked
@@ -1252,43 +1337,56 @@ public class FrmVentas extends javax.swing.JFrame { //JFrame
     private void tblActCabVentaMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblActCabVentaMouseClicked
         DbBean con = new DbBean();
         int idx;
-        idx=this.tblActCabVenta.getSelectedRow();
+        idx = this.tblActCabVenta.getSelectedRow();
+
+        // Datos visibles
         this.txtCabCod.setText(dtml4.getValueAt(idx, 0).toString());
         this.txtSede2.setText(dtml4.getValueAt(idx, 3).toString());
         this.txtEmpleado2.setText(dtml4.getValueAt(idx, 1).toString());
-        if(dtml4.getValueAt(idx, 4).toString().equals("1")){
+        if (dtml4.getValueAt(idx, 4).toString().equals("1")) {
             this.cmbEstado.setSelectedItem("Activo");
-        }else{
+        } else {
             this.cmbEstado.setSelectedItem("No activo");
         }
-        String queryemp;
-        queryemp="select empleadoid from ventas where ventaid= '"+this.txtCabCod.getText()+"'";
 
-        try{
+        // 1) Recuperar empleado
+        String queryemp = "select empleadoid from ventas where ventaid = '" 
+                          + this.txtCabCod.getText() + "'";
+
+        try {
             ResultSet resultado = con.resultadoSQL(queryemp);
-
-            while(resultado.next()){
+            while (resultado.next()) {
                 this.txtIdEmpleado.setText(resultado.getString(1));
-                
             }
-        }catch(java.sql.SQLException e){
+        } catch (java.sql.SQLException e) {
             e.printStackTrace();
         }
-        
-        String querysede;
-        querysede="select sedeid from ventas where ventaid= '"+this.txtCabCod.getText()+ "'";
-        try{
-            ResultSet resultado = con.resultadoSQL(querysede);
 
-            while(resultado.next()){
+        // 2) Recuperar sede
+        String querysede = "select sedeid from ventas where ventaid = '" 
+                           + this.txtCabCod.getText() + "'";
+        try {
+            ResultSet resultado = con.resultadoSQL(querysede);
+            while (resultado.next()) {
                 this.txtIdSede.setText(resultado.getString(1));
-                
             }
-        }catch(java.sql.SQLException e){
+        } catch (java.sql.SQLException e) {
             e.printStackTrace();
         }
-        
-        this.btnGrabar.setText("Actualizar cabecera");
+
+        // 3) Recuperar cliente
+        String querycli = "select clienteid from ventas where ventaid = '" 
+                          + this.txtCabCod.getText() + "'";
+        try {
+            ResultSet resultado = con.resultadoSQL(querycli);
+            while (resultado.next()) {
+                this.txtIdCliente.setText(resultado.getString(1));
+            }
+        } catch (java.sql.SQLException e) {
+            e.printStackTrace();
+        }
+
+        this.btnGrabar.setText("Actualizar detalle");
     }//GEN-LAST:event_tblActCabVentaMouseClicked
 
     private void tblActDetVentaMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblActDetVentaMouseClicked

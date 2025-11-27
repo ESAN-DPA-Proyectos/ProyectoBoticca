@@ -23,7 +23,7 @@ public class SelRol extends javax.swing.JDialog {
     
     private void llenaTblSelRol(String cad){
         Vector<Rol> listaRol;
-        listaRol=rolDao.listaRol(cad);
+        listaRol=rolDao.listarRoles(cad);
         dtm.setRowCount(0);
         for(int i=0; i<listaRol.size();i++){
             Vector vec=new Vector();

@@ -353,14 +353,22 @@ public class FrmEmpresa extends javax.swing.JInternalFrame {
     }//GEN-LAST:event_btnGrabarActionPerformed
 
     private void btnEliminarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEliminarActionPerformed
-        System.out.println(idEmp);
-        if (this.empDao.eliminaEmpresas(idEmp) == true) {
-            JOptionPane.showMessageDialog(this, "Empresa eliminada");
-            this.LlenaTblEmpresas("");
+        // Obtener ID desde el formulario
+        int idEmp = Integer.parseInt(this.txtIDEmpresa.getText());
+
+        // Llamar al DAO
+        int r = this.empDao.eliminaEmpresas(idEmp);
+
+        // Evaluación del resultado
+        if (r == 1) {
+            JOptionPane.showMessageDialog(this, 
+                    "Empresa eliminada satisfactoriamente");
+            limpia();                 // limpiar formulario
+            LlenaTblEmpresas("");     // refrescar tabla
         } else {
-            JOptionPane.showMessageDialog(this, "No es posible la eliminación, consulte con el DBA");
-        }
-        limpia();        
+            JOptionPane.showMessageDialog(this, 
+                    "No es posible la eliminación, consulte con el DBA");
+        }        
     }//GEN-LAST:event_btnEliminarActionPerformed
 
     private void tblEmpresasMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblEmpresasMouseClicked

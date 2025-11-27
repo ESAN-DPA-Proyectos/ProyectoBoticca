@@ -343,33 +343,53 @@ public class FrmInstAcademica extends javax.swing.JInternalFrame {
     }//GEN-LAST:event_txtBuscarKeyReleased
 
     private void btnGrabarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGrabarActionPerformed
-        if(valida()==true){
+        if (valida() == true) {
+
             String msj;
             Util u = new Util();
-            
-            InstAcademica empl = new InstAcademica(); //se crea xq el procedimiento inserta proveedor requiere el parámetro de proveedor
-            
-            empl.setNombre_institucion(this.txtNombreInstitucion.getText());
-            empl.setTipo(this.cmbTipo.getSelectedItem().toString());
-            empl.setWeb(this.txtWeb.getText());
-            empl.setContacto(this.txtContacto.getText());
-            empl.setTelefono(this.txtTelefono.getText());
-            if(this.cmbEstado.getSelectedItem().toString().equals("Activo")){
-                empl.setEstado(1);
-            }else{
-                empl.setEstado(0);
+
+            InstAcademica inst = new InstAcademica();
+
+            inst.setNombre_institucion(this.txtNombreInstitucion.getText());
+            inst.setTipo(this.cmbTipo.getSelectedItem().toString());
+            inst.setWeb(this.txtWeb.getText());
+            inst.setContacto(this.txtContacto.getText());
+            inst.setTelefono(this.txtTelefono.getText());
+
+            if (this.cmbEstado.getSelectedItem().toString().equals("Activo")) {
+                inst.setEstado(1);
+            } else {
+                inst.setEstado(0);
             }
-            if(this.btnGrabar.getText().equals("Grabar")){ //se crea para autogenerar la llave
-                idInst=u.idNext("InstAcademica", "InstitucionID"); //es el nombre de la tabla y el nombre del campo de la llave primaria
-                empl.setId_institucion(idInst);
-                this.instDao.insertaInstAcademica(empl);
-                msj="Institucion registrada satisfactoriamente";
-            }else{
-                empl.setId_institucion(idInst);
-                this.instDao.actualizaInstAcademica(empl);
-                msj="Institucion actualizada satisfactoriamente";
+
+            int r;
+
+        // INSERTAR
+        if (this.btnGrabar.getText().equals("Grabar")) {
+
+            int id = u.idNext("InstAcademica", "InstitucionID");
+            inst.setId_institucion(id);
+
+            r = this.instDao.insertaInstAcademica(inst);   // ✔ nombre correcto
+
+            if (r > 0) {
+                msj = "Institución registrada satisfactoriamente";
+            } else {
+                msj = "No se pudo registrar la institución";
             }
-            
+
+        // ACTUALIZAR
+        } else {
+            inst.setId_institucion(Integer.parseInt(this.txtIdInstitucion.getText()));
+
+            r = this.instDao.actualizaInstAcademica(inst); // ✔ nombre correcto
+
+            if (r > 0) {
+                msj = "Institución actualizada";
+            } else {
+                msj = "No se pudo actualizar la institución";
+            }
+        }
             limpia();
             llenaTblInstAcademica("");
             JOptionPane.showMessageDialog(this, msj);
@@ -401,16 +421,21 @@ public class FrmInstAcademica extends javax.swing.JInternalFrame {
     }//GEN-LAST:event_btnSalirActionPerformed
 
     private void btnEliminarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEliminarActionPerformed
-        //int idProd;
-        //idProd=Integer.parseInt(dtm.getValueAt(idx, 0).toString());
-        if(this.instDao.eliminaInstAcademica(idInst)==true){
-            JOptionPane.showMessageDialog(this, "Institucion eliminada satisfactoriamente");
-            this.llenaTblInstAcademica("");
+        // Obtener ID
+        int id = Integer.parseInt(this.txtIdInstitucion.getText());
+
+        // Llamar al DAO (devuelve 1 si elimina)
+        int r = this.instDao.eliminaInstAcademica(id);
+
+        // Evaluar resultado
+        if (r > 0) {
+            JOptionPane.showMessageDialog(this, "Institución eliminada correctamente");
             limpia();
-        }else{
-            JOptionPane.showMessageDialog(this, "No es posible eliminar a la isntitucion, consulte con el DBA");
+            llenaTblInstAcademica("");
+        } else {
+            JOptionPane.showMessageDialog(this, 
+                "No es posible eliminar la institución (revise dependencias o consulte con el DBA)");
         }
-        limpia();
     }//GEN-LAST:event_btnEliminarActionPerformed
 
     private void btnPdfActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnPdfActionPerformed
@@ -468,7 +493,6 @@ public class FrmInstAcademica extends javax.swing.JInternalFrame {
         this.cmbEstado.setSelectedItem("");
         this.btnGrabar.setText("Grabar");
         this.btnEliminar.setEnabled(false);
-        llenaTblInstAcademica("");
     }
     
 

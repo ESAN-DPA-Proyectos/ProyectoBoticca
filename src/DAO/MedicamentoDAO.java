@@ -1,118 +1,162 @@
-
 package DAO;
 
+import BEAN.Categoria;
 import BEAN.Medicamento;
+import BEAN.Proveedor;
 import UTIL.DbBean;
+import java.math.BigDecimal;
+import java.sql.CallableStatement;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.util.Vector;
 
 public class MedicamentoDAO {
-    public Vector<Medicamento> listaMedicamentos(String cad){
-        DbBean db=new DbBean();
-               
-        Vector<Medicamento> listaMed = new Vector<Medicamento>();
-        
-        String sql;
-        sql= "select * from medicamentos ";
-        if(!cad.isEmpty()){ //con este if se agrega el where en el query sql
-            sql=sql+" where nombre like '%"+ cad +"%'";
-        }
-        try{
-            ResultSet rstMedicamentos = db.resultadoSQL(sql);
-            while(rstMedicamentos.next()){
-                Medicamento med = new Medicamento();
-                med.setId_medicamento(rstMedicamentos.getInt(1));
-                med.setId_categoria(rstMedicamentos.getInt(2));
-                med.setId_proveedor(rstMedicamentos.getInt(3));
-                med.setNombre(rstMedicamentos.getString(4));
-                med.setDescripcion(rstMedicamentos.getString(5));
-                med.setPrecio(rstMedicamentos.getFloat(6));
-                med.setStock(rstMedicamentos.getInt(7));
-                med.setFecha_vencimiento(rstMedicamentos.getString(8));
-                listaMed.addElement(med);
-            }
-        }catch(java.sql.SQLException e){
-            e.printStackTrace();
-        }
-        try{
-            db.desconecta();
-        }catch(java.sql.SQLException e){
-            e.printStackTrace();
-        }
-                
-        return listaMed;
-    }
-    public void insertaMedicamentos(Medicamento med){
-        DbBean db=new DbBean();
-        String sql;
-        try{
-            sql="insert into medicamentos values (";
-            sql=sql+" "+ med.getId_medicamento() +", ";
-            sql=sql+" "+ med.getId_categoria() +", ";
-            sql=sql+" "+ med.getId_proveedor() +", ";
-            sql=sql+" '"+ med.getNombre() +"', ";
-            sql=sql+" '"+ med.getDescripcion() +"', ";
-            sql=sql+" "+ med.getPrecio() +", ";
-            sql=sql+" "+ med.getStock() +", ";
-            sql=sql+" '"+ med.getFecha_vencimiento() +"') ";
-            
-            
-            System.out.println("\nDPA"+sql);
-            
-            db.ejecutaSQL(sql);
-        }catch(java.sql.SQLException e){
-            e.printStackTrace();
-        }
-        try{
-            db.desconecta();
-        }catch(java.sql.SQLException e){
-            e.printStackTrace();
-        }
-                
-    }
-    public void actualizaMedicamentos(Medicamento med){
-        DbBean db=new DbBean();
-        String sql;
-        try{
-            sql="update medicamentos set ";
-            sql=sql+" CategoriaID = "+med.getId_categoria()+", ";
-            sql=sql+" ProveedorID = "+med.getId_proveedor()+", ";
-            sql=sql+" Nombre = '"+med.getNombre()+"', ";
-            sql=sql+" Descripcion = '"+med.getDescripcion()+"', ";
-            sql=sql+" Precio = '"+med.getPrecio()+"', ";
-            sql=sql+" Stock = '"+med.getStock()+"', ";
-            sql=sql+" FechaExpiracion = '"+med.getFecha_vencimiento()+"' ";
-            sql=sql+"where MedicamentoID = "+med.getId_medicamento()+"";
-            db.ejecutaSQL(sql);
-        }catch(java.sql.SQLException e){
-            e.printStackTrace();
-        }
-        try{
-            db.desconecta();
-        }catch(java.sql.SQLException e){
-            e.printStackTrace();
-        }
-    }
-    public boolean eliminaMedicamentos(int idMed){
-        //verificando la no dependencia de la tabla det_venta
-        boolean sw = false;
-        DbBean db=new DbBean();       
-        Vector<Medicamento> listaMed = new Vector<Medicamento>();
-        
-        String sql;
-        sql= "select * from medicamentos where MedicamentoID= "+ idMed +"";
 
-        try{
-            ResultSet rstMedicamentos = db.resultadoSQL(sql);
+   // LISTAR CON SP
+    public Vector<Medicamento> listarMedicamentos(String cad) {
+        DbBean db = new DbBean();
+        Vector<Medicamento> lista = new Vector<>();
 
-            if (rstMedicamentos.next()){
-                sql="delete from medicamentos where MedicamentoID="+idMed+"";
-                db.ejecutaSQL(sql);
-                sw=true;
+        try {
+            Connection cn = db.getConnection();
+            CallableStatement cst = cn.prepareCall("{call Medicamento_Listar(?)}");
+            cst.setString(1, cad);
+
+            ResultSet rs = cst.executeQuery();
+
+            while (rs.next()) {
+                Medicamento m = new Medicamento();
+
+                m.setId_medicamento(rs.getInt("MedicamentoID"));
+
+                // --- Categoría ---
+                Categoria cat = new Categoria();
+                cat.setId_categoria(rs.getInt("CategoriaID"));
+                cat.setDescripcion(rs.getString("NombreCategoria"));
+                m.setCategoria(cat);
+
+                // IMPORTANTE: Guardar también el ID
+                m.setId_categoria(cat.getId_categoria());
+
+                // --- Proveedor ---
+                Proveedor p = new Proveedor();
+                p.setId_proveedor(rs.getInt("ProveedorID"));
+                p.setNombre(rs.getString("NombreProveedor"));
+                m.setProveedor(p);
+
+                // IMPORTANTE: Guardar también el ID
+                m.setId_proveedor(p.getId_proveedor());
+
+                // --- Otros campos ---
+                m.setNombre(rs.getString("Nombre"));
+                m.setDescripcion(rs.getString("Descripcion"));
+                m.setPrecio(rs.getFloat("Precio"));
+                m.setStock(rs.getInt("Stock"));
+                m.setFecha_vencimiento(rs.getString("FechaExpiracion"));
+
+                lista.add(m);
             }
-        }catch(java.sql.SQLException e){
-            
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            try { db.desconecta(); } catch (Exception e) {}
         }
-        return sw;
+
+        return lista;
     }
+
+    // INSERTAR
+    public int insertarMedicamento(Medicamento m) {
+        DbBean db = new DbBean();
+        int r = 0;
+
+        try {
+            Connection cn = db.getConnection();
+            CallableStatement cst = cn.prepareCall("{call Medicamento_Insertar(?,?,?,?,?,?,?,?)}");
+
+            cst.setInt(1, m.getId_medicamento());
+            cst.setInt(2, m.getId_categoria());
+            cst.setInt(3, m.getId_proveedor());
+            cst.setString(4, m.getNombre());
+            cst.setString(5, m.getDescripcion());
+            cst.setBigDecimal(6, new BigDecimal(m.getPrecio()));
+            cst.setInt(7, m.getStock());
+            cst.setDate(8, java.sql.Date.valueOf(m.getFecha_vencimiento()));
+
+            // Igual que EmpresaDAO:
+            cst.executeUpdate();
+            r = 1; // éxito
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            r = 0; // error
+        } finally {
+            try { db.desconecta(); } catch (Exception ex) {}
+        }
+
+        return r;
+    }
+
+    // ACTUALIZAR
+    public int actualizarMedicamento(Medicamento m) {
+        DbBean db = new DbBean();
+        int r = 0;
+
+        try {
+            Connection cn = db.getConnection();
+            CallableStatement cst = cn.prepareCall("{call Medicamento_Actualizar(?,?,?,?,?,?,?,?)}");
+
+            // Parámetros en el mismo orden del SP
+            cst.setInt(1, m.getId_medicamento());
+            cst.setInt(2, m.getId_categoria());
+            cst.setInt(3, m.getId_proveedor());
+            cst.setString(4, m.getNombre());
+            cst.setString(5, m.getDescripcion());
+            cst.setBigDecimal(6, new BigDecimal(m.getPrecio())); // DECIMAL
+            cst.setInt(7, m.getStock());
+            cst.setDate(8, java.sql.Date.valueOf(m.getFecha_vencimiento())); // DATE
+
+            cst.executeUpdate();  
+
+            // Igual que EmpresaDAO
+            r = 1;
+
+        } catch (Exception e) {
+            System.err.println("ERROR EN ACTUALIZAR MEDICAMENTO:");
+            e.printStackTrace();
+            r = 0;
+        } finally {
+            try { db.desconecta(); } catch (Exception e) {}
+        }
+        return r;
+    }
+
+
+    // ELIMINAR
+    public int eliminarMedicamento(int id) {
+    DbBean db = new DbBean();
+    int r = 0;
+
+    try {
+        Connection cn = db.getConnection();
+        CallableStatement cst = cn.prepareCall("{call Medicamento_Eliminar(?)}");
+
+        cst.setInt(1, id);
+
+        cst.executeUpdate();  // No usamos el valor retornado
+
+        r = 1; // ÉXITO según patrón
+
+    } catch (Exception e) {
+        System.err.println("ERROR EN ELIMINAR MEDICAMENTO:");
+        e.printStackTrace();
+        r = 0; // ERROR
+    } finally {
+        try { db.desconecta(); } catch (Exception e) {}
+    }
+
+    return r;
+}
+
 }

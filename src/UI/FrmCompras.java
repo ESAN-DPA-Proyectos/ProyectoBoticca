@@ -60,7 +60,7 @@ public class FrmCompras extends javax.swing.JFrame { //JFrame
     
     private void llenaTblProveedor(String cad){
         Vector<Proveedor> listaProveedor;
-        listaProveedor=provDao.listaProveedores(cad);
+        listaProveedor=provDao.listarProveedores(cad);
         dtm.setRowCount(0);
         for(int i=0; i<listaProveedor.size();i++){
             Vector vec=new Vector();
@@ -1077,39 +1077,46 @@ public class FrmCompras extends javax.swing.JFrame { //JFrame
         int idDetComp;
         DbBean con = new DbBean();
         String fech;
-        if(this.btnGrabar.getText().equals("Grabar")){
-            if(this.txtIdProveedor.getText().isEmpty() || dtml2.getRowCount()==0){
-                JOptionPane.showMessageDialog(this, "Debe seleccionar un proveedor y por lo menos un producto");
-            }else{
-                // Insertando en la cabecera: cab_venta
-                
-                fech=u.obtenerFecha();
-                for(int i=0;i<dtml2.getRowCount();i++){
-                    idComp=u.idNext("compras", "compraid"); //tabla,campo llave
-                    cab_compra cc= new cab_compra();
-                    cc.setId_compra(idComp);
-                    cc.setId_proveedor(Integer.parseInt(this.txtIdProveedor.getText()));
-                    cc.setId_empleado(Integer.parseInt(this.txtIdEmpleado.getText()));
-                    cc.setFecha(fech);
-                    cc.setEstado(1);
-                    this.cabDao.procesaItem(cc,"insert");
-                }
+        if (this.btnGrabar.getText().equals("Grabar")) {
+            if (this.txtIdProveedor.getText().isEmpty() || dtml2.getRowCount() == 0) {
+                JOptionPane.showMessageDialog(this,
+                        "Debe seleccionar un proveedor y por lo menos un producto");
+            } else {
+                // 1. Insertar CABECERA de la compra
+                fech = u.obtenerFecha();
+                // Genero UN SOLO ID para la compra
+                idComp = u.idNext("Compras", "CompraID");   // tabla, campo llave
 
-                // Insertando en el detalle: det_compra
-                for(int i=0;i<dtml2.getRowCount();i++){
-                    det_compra dc=new det_compra();
-                    idDetComp=u.idNext("Detallescompra", "compraid"); //tabla,campo llave
-                    dc.setId_compra(idDetComp);
-                    dc.setId_medicamento(Integer.parseInt(dtml2.getValueAt(i,0).toString()));
-                    dc.setCantidad(Integer.parseInt(dtml2.getValueAt(i, 3).toString()));
-                    dc.setPreciounit(Float.parseFloat(dtml2.getValueAt(i,4).toString()));
+                cab_compra cc = new cab_compra();
+                cc.setId_compra(idComp);
+                cc.setId_proveedor(Integer.parseInt(this.txtIdProveedor.getText()));
+                cc.setId_empleado(Integer.parseInt(this.txtIdEmpleado.getText()));
+                cc.setFecha(fech);
+                cc.setEstado(1);
+                this.cabDao.procesaItem(cc, "insert");
+
+                // 2. Insertar DETALLES de la compra
+                for (int i = 0; i < dtml2.getRowCount(); i++) {
+                    det_compra dc = new det_compra();
+                    dc.setId_compra(idComp); // mismo ID de la cabecera
+                    dc.setId_medicamento(Integer.parseInt(
+                            dtml2.getValueAt(i, 0).toString()));
+                    dc.setCantidad(Integer.parseInt(
+                            dtml2.getValueAt(i, 3).toString()));
+                    dc.setPreciounit(Float.parseFloat(
+                            dtml2.getValueAt(i, 4).toString()));
                     this.detDao.procesaItem(dc, "insert");
                 }
+
                 limpiaCabecera();
                 limpiaDetalle();
-                //dtml.setRowCount(0);
-                JOptionPane.showMessageDialog(this, "Compra registrada satisfactoriamente");
+                JOptionPane.showMessageDialog(this,
+                        "Compra registrada satisfactoriamente");
+                // Refrescar las tablas de la pestaña "Buscar Compras"
+                llenaTblCabCompra(false, "");
+                llenaTblDetCompra(false, "");
             }
+
         }else if(this.btnGrabar.getText().equals("Actualizar cabecera")){
             if(this.txtProv2.getText().isEmpty() || this.txtEmpleado2.getText().isEmpty()){
                 JOptionPane.showMessageDialog(this, "Debe seleccionar un proveedor y empleado");
@@ -1182,20 +1189,129 @@ public class FrmCompras extends javax.swing.JFrame { //JFrame
     }//GEN-LAST:event_tblCabCompraMouseClicked
 
     private void btnBorrarVentaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBorrarVentaActionPerformed
-        int idVe;
-        idVe=Integer.parseInt(txtCabCod.getText());
-        this.detDao.borraDeta(idVe);
-        this.cabDao.borraCab(idVe);
-        limpiaPrimeraHoja();
-        //System.out.println(idVe);
+        // 1. Validar que exista código de cabecera
+        if (txtCabCod.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "No hay una compra seleccionada.",
+                    "Aviso",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // 2. Confirmar con el usuario
+        int opcion = JOptionPane.showConfirmDialog(this,
+                "¿Está seguro de eliminar la compra y todos sus detalles?",
+                "Confirmar eliminación",
+                JOptionPane.YES_NO_OPTION);
+
+        if (opcion != JOptionPane.YES_OPTION) {
+            return;    // el usuario canceló
+        }
+
+        // 3. Si confirmó, eliminamos detalle y cabecera
+        int idVe = Integer.parseInt(txtCabCod.getText());
+
+        this.detDao.borraDeta(idVe);        // elimina todos los detalles (SP vía DAO)
+        int r = this.cabDao.borraCab(idVe); // elimina la cabecera (SP vía DAO)
+
+        // 4. Evaluamos resultado y limpiamos pantalla
+        if (r > 0) {
+            JOptionPane.showMessageDialog(this,
+                    "Compra eliminada correctamente.",
+                    "Información",
+                    JOptionPane.INFORMATION_MESSAGE);
+
+            // Limpia y recarga la pestaña "Buscar Compras"
+            limpiaPrimeraHoja();
+
+            // NUEVO: recargar también las tablas de la pestaña "Actualizar"
+            llenaTblActCabCompra(false, "");
+            llenaTblActDetCompra(false, "");
+
+        } else {
+            JOptionPane.showMessageDialog(this,
+                    "No se pudo eliminar la compra.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
     }//GEN-LAST:event_btnBorrarVentaActionPerformed
 
     private void btnBorrarDetalleActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBorrarDetalleActionPerformed
-        int idVe;
-        idVe=Integer.parseInt(txtDetCod.getText());
-        this.detDao.borraDeta(idVe);
-        this.cabDao.borraCab(idVe);
-        limpiaPrimeraHoja();
+        // 1. Validar que exista una compra seleccionada
+        if (txtCabCod.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "Debe seleccionar primero una compra.",
+                    "Aviso",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // 2. Validar que haya un detalle seleccionado en la tabla
+        int fila = tblDetCompra.getSelectedRow();
+        if (fila == -1) {
+            JOptionPane.showMessageDialog(this,
+                    "Debe seleccionar un detalle de la tabla.",
+                    "Aviso",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // 3. Confirmar con el usuario
+        int opcion = JOptionPane.showConfirmDialog(this,
+                "¿Está seguro de eliminar el detalle seleccionado?",
+                "Confirmar eliminación",
+                JOptionPane.YES_NO_OPTION);
+
+        if (opcion != JOptionPane.YES_OPTION) {
+            return; // el usuario canceló
+        }
+
+        // 4. Obtener datos de la fila seleccionada
+        int idCompra = Integer.parseInt(tblDetCompra.getValueAt(fila, 0).toString());
+        String nomMed = tblDetCompra.getValueAt(fila, 1).toString();
+        int cant = Integer.parseInt(tblDetCompra.getValueAt(fila, 2).toString());
+        float precioUnit = Float.parseFloat(tblDetCompra.getValueAt(fila, 3).toString());
+
+        // 5. Pedir al DAO todos los detalles de esa compra
+        Vector<det_compra> detalles = detDao.listaItem(true, String.valueOf(idCompra));
+
+        Integer idMedicamento = null;
+        for (det_compra dc : detalles) {
+            // Comparamos por nombre, cantidad y precio unitario
+            if (dc.getMedicamento().equals(nomMed)
+                    && dc.getCantidad() == cant
+                    && Float.compare(dc.getPreciounit(), precioUnit) == 0) {
+                idMedicamento = dc.getId_medicamento();
+                break;
+            }
+        }
+
+        if (idMedicamento == null) {
+            JOptionPane.showMessageDialog(this,
+                    "No se pudo determinar el código del medicamento para el detalle seleccionado.",
+                    "Aviso",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // 6. Eliminar SOLO ese detalle usando el DAO (SP DetalleCompra_EliminarUnit)
+        int r = detDao.eliminarUnit(idCompra, idMedicamento);
+
+        // 7. Evaluar resultado y recargar la tabla
+        if (r > 0) {
+            JOptionPane.showMessageDialog(this,
+                    "Detalle eliminado correctamente.",
+                    "Información",
+                    JOptionPane.INFORMATION_MESSAGE);
+
+            // Volvemos a cargar los detalles de la compra actual
+            llenaTblDetCompra(true, String.valueOf(idCompra));
+        } else {
+            JOptionPane.showMessageDialog(this,
+                    "No se pudo eliminar el detalle.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
     }//GEN-LAST:event_btnBorrarDetalleActionPerformed
 
     private void tblDetCompraMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblDetCompraMouseClicked
@@ -1207,71 +1323,90 @@ public class FrmCompras extends javax.swing.JFrame { //JFrame
     }//GEN-LAST:event_tblDetCompraMouseClicked
 
     private void tblActCabVentaMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblActCabVentaMouseClicked
-        DbBean con = new DbBean();
-        int idx;
-        idx=this.tblActCabVenta.getSelectedRow();
+        // 1. Obtener la fila seleccionada de la tabla de cabeceras
+        int idx = this.tblActCabVenta.getSelectedRow();
+        if (idx == -1) {
+            return;
+        }
+
+        // Columnas en dtml4:
+        // 0 = Id compra, 1 = Proveedor, 2 = Fecha, 3 = Empleado, 4 = Estado
         this.txtCabCod.setText(dtml4.getValueAt(idx, 0).toString());
         this.txtProv2.setText(dtml4.getValueAt(idx, 1).toString());
         this.txtEmpleado2.setText(dtml4.getValueAt(idx, 3).toString());
-        if(dtml4.getValueAt(idx, 4).toString().equals("1")){
+
+        if (dtml4.getValueAt(idx, 4).toString().equals("1")) {
             this.cmbEstado.setSelectedItem("Activo");
-        }else{
+        } else {
             this.cmbEstado.setSelectedItem("No activo");
         }
-        String queryprov;
-        queryprov="select proveedorid from compras where compraid= '"+this.txtCabCod.getText()+"'";
 
-        try{
-            ResultSet resultado = con.resultadoSQL(queryprov);
+        // 2. Obtener datos completos de la cabecera desde el DAO (sin SQL directo)
+        int idCompra = Integer.parseInt(this.txtCabCod.getText());
+        cab_compra cc = cabDao.obtenerPorId(idCompra);
 
-            while(resultado.next()){
-                this.txtIdProv.setText(resultado.getString(1));
-                
-            }
-        }catch(java.sql.SQLException e){
-            e.printStackTrace();
+        if (cc != null) {
+            this.txtIdProv.setText(String.valueOf(cc.getId_proveedor()));
+            this.txtIdEmpleado.setText(String.valueOf(cc.getId_empleado()));
+        } else {
+            this.txtIdProv.setText("");
+            this.txtIdEmpleado.setText("");
+            JOptionPane.showMessageDialog(this,
+                    "No se encontró la cabecera de la compra seleccionada.",
+                    "Aviso",
+                    JOptionPane.WARNING_MESSAGE);
         }
-        
-        String querysede;
-        querysede="select empleadoid from compras where compraid= '"+this.txtCabCod.getText()+ "'";
-        try{
-            ResultSet resultado = con.resultadoSQL(querysede);
 
-            while(resultado.next()){
-                this.txtIdEmpleado.setText(resultado.getString(1));
-                
-            }
-        }catch(java.sql.SQLException e){
-            e.printStackTrace();
-        }
-        
+        // 3. NUEVO: filtrar el detalle de la compra seleccionada
+        //    para la tabla tblActDetVenta
+        llenaTblActDetCompra(true, this.txtCabCod.getText());
+
+        // 4. Poner el botón Grabar en modo "Actualizar cabecera"
         this.btnGrabar.setText("Actualizar cabecera");
     }//GEN-LAST:event_tblActCabVentaMouseClicked
 
     private void tblActDetVentaMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblActDetVentaMouseClicked
-        DbBean con = new DbBean();
-        int idx;
-        idx=this.tblActDetVenta.getSelectedRow();
-        this.txtDetCod.setText(dtml5.getValueAt(idx, 0).toString());
-        this.txtCabCod.setText(dtml5.getValueAt(idx, 0).toString());
-        this.txtMed2.setText(dtml5.getValueAt(idx, 1).toString());
-        this.txtCantidad2.setText(dtml5.getValueAt(idx, 2).toString());
-        this.txtPrecioUnit2.setText(dtml5.getValueAt(idx, 3).toString());
-
-        String querymed;
-        querymed="select medicamentoid from Detallescompra where compraid= '"+this.txtDetCod.getText()+"'";
-
-        try{
-            ResultSet resultado = con.resultadoSQL(querymed);
-
-            while(resultado.next()){
-                this.txtIdMed.setText(resultado.getString(1));
-                
-            }
-        }catch(java.sql.SQLException e){
-            e.printStackTrace();
+        // 1. Obtener la fila seleccionada
+        int idx = this.tblActDetVenta.getSelectedRow();
+        if (idx == -1) {
+            return;
         }
-        
+
+        // 2. Llenar los campos visibles desde la tabla
+        this.txtDetCod.setText(dtml5.getValueAt(idx, 0).toString());   // Id compra
+        this.txtCabCod.setText(dtml5.getValueAt(idx, 0).toString());   // Id compra
+        this.txtMed2.setText(dtml5.getValueAt(idx, 1).toString());     // Nombre medicamento
+        this.txtCantidad2.setText(dtml5.getValueAt(idx, 2).toString()); // Cantidad
+        this.txtPrecioUnit2.setText(dtml5.getValueAt(idx, 3).toString()); // Precio unitario
+
+        // 3. Usar el DAO para recuperar el id_medicamento (sin SQL directo en la UI)
+        int idCompra = Integer.parseInt(this.txtDetCod.getText());
+        String nomMed = this.txtMed2.getText();
+        int cant = Integer.parseInt(this.txtCantidad2.getText());
+
+        // Lista de detalles de esa compra
+        Vector<det_compra> detalles = detDao.listaItem(true, String.valueOf(idCompra));
+
+        Integer idMed = null;
+        for (det_compra dc : detalles) {
+            // Comparamos por nombre de medicamento y cantidad
+            if (dc.getMedicamento().equals(nomMed) && dc.getCantidad() == cant) {
+                idMed = dc.getId_medicamento();
+                break;
+            }
+        }
+
+        if (idMed != null) {
+            this.txtIdMed.setText(String.valueOf(idMed));
+        } else {
+            this.txtIdMed.setText("");
+            JOptionPane.showMessageDialog(this,
+                    "No se pudo determinar el código del medicamento para el detalle seleccionado.",
+                    "Aviso",
+                    JOptionPane.WARNING_MESSAGE);
+        }
+
+        // 4. Cambiar el modo del botón Grabar
         this.btnGrabar.setText("Actualizar detalle");
     }//GEN-LAST:event_tblActDetVentaMouseClicked
 

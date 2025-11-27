@@ -1,112 +1,123 @@
-
 package DAO;
 
 import BEAN.Ubigeo;
 import UTIL.DbBean;
+import java.sql.CallableStatement;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.util.Vector;
 
 public class UbigeoDAO {
-    public Vector<Ubigeo> listaUbigeo(String cad){
-        DbBean db=new DbBean();
-               
-        Vector<Ubigeo> listaUbigeo = new Vector<Ubigeo>();
-        
-        String sql;
-        sql= "select * from ubigeo ";
-        if(!cad.isEmpty()){ //con este if se agrega el where en el query sql
-            sql=sql+" where distrito like '%"+ cad +"%'";
-        }
-        try{
-            ResultSet rstUbigeos = db.resultadoSQL(sql);
-            while(rstUbigeos.next()){
+
+    // LISTAR (SP: Ubigeo_Listar)
+    public Vector<Ubigeo> listarUbigeo(String cad) {
+        DbBean db = new DbBean();
+        Vector<Ubigeo> listaUbigeo = new Vector<>();
+
+        try {
+            Connection cn = db.getConnection();
+            CallableStatement cst = cn.prepareCall("{call Ubigeo_Listar(?)}");
+            cst.setString(1, cad); // puede ir vacío o distrito a buscar
+
+            ResultSet rstUbigeos = cst.executeQuery();
+            while (rstUbigeos.next()) {
                 Ubigeo ubi = new Ubigeo();
-                ubi.setId_ubigeo(rstUbigeos.getInt(1));
-                ubi.setRegion(rstUbigeos.getString(2));
-                ubi.setDepartamento(rstUbigeos.getString(3));
-                ubi.setProvincia(rstUbigeos.getString(4));
-                ubi.setDistrito(rstUbigeos.getString(5));
+                ubi.setId_ubigeo(rstUbigeos.getInt("UbigeoId"));
+                ubi.setRegion(rstUbigeos.getString("Region"));
+                ubi.setDepartamento(rstUbigeos.getString("Departamento"));
+                ubi.setProvincia(rstUbigeos.getString("Provincia"));
+                ubi.setDistrito(rstUbigeos.getString("Distrito"));
                 listaUbigeo.addElement(ubi);
             }
-        }catch(java.sql.SQLException e){
+        } catch (Exception e) {
+            System.err.println("ERROR EN LISTAR UBIGEO:");
             e.printStackTrace();
+        } finally {
+            try { db.desconecta(); } catch (Exception e) {}
         }
-        try{
-            db.desconecta();
-        }catch(java.sql.SQLException e){
-            e.printStackTrace();
-        }
-                
+
         return listaUbigeo;
     }
-    
-    public void insertaUbigeos(Ubigeo ubi){
-        DbBean db=new DbBean();
-        String sql;
-        try{
-            sql="insert into ubigeo values (";
-            sql=sql+" "+ ubi.getId_ubigeo() +", ";
-            sql=sql+" '"+ ubi.getRegion() +"', ";
-            sql=sql+" '"+ ubi.getDepartamento() +"', ";
-            sql=sql+" '"+ ubi.getProvincia() +"', ";
-            sql=sql+" '"+ ubi.getDistrito() +"') ";
-            
-            
-            System.out.println("\nDPA"+sql);
-            
-            db.ejecutaSQL(sql);
-        }catch(java.sql.SQLException e){
-            e.printStackTrace();
-        }
-        try{
-            db.desconecta();
-        }catch(java.sql.SQLException e){
-            e.printStackTrace();
-        }
-                
-    }
-    
-    public void actualizaUbigeos(Ubigeo ubi){
-        DbBean db=new DbBean();
-        String sql;
-        try{
-            sql="update ubigeo set ";
-            sql=sql+" region = '"+ubi.getRegion()+"', ";
-            sql=sql+" departamento = '"+ubi.getDepartamento()+"', ";
-            sql=sql+" provincia = '"+ubi.getProvincia()+"', ";
-            sql=sql+" distrito = '"+ubi.getDistrito()+"' ";
-            sql=sql+"where ubigeoID = "+ubi.getId_ubigeo()+"";
-            db.ejecutaSQL(sql);
-        }catch(java.sql.SQLException e){
-            e.printStackTrace();
-        }
-        try{
-            db.desconecta();
-        }catch(java.sql.SQLException e){
-            e.printStackTrace();
-        }
-    }
-    
-    public boolean eliminaUbigeos(int idUbi){
-        //verificando la no dependencia de la tabla det_venta
-        boolean sw = false;
-        DbBean db=new DbBean();       
-        Vector<Ubigeo> listaArea = new Vector<Ubigeo>();
-        
-        String sql;
-        sql= "select * from sede where UbigeoID= "+ idUbi +"";
 
-        try{
-            ResultSet rstContrato = db.resultadoSQL(sql);
+    // INSERTAR (SP: Ubigeo_Insertar)
+    public int insertarUbigeo(Ubigeo ubi) {
+        DbBean db = new DbBean();
+        int r = 0;
 
-            if (!rstContrato.next()){
-                sql="delete from Ubigeo where UbigeoID="+idUbi+"";
-                db.ejecutaSQL(sql);
-                sw=true;
-            }
-        }catch(java.sql.SQLException e){
-            
+        try {
+            Connection cn = db.getConnection();
+            CallableStatement cst = cn.prepareCall("{call Ubigeo_Insertar(?,?,?,?,?)}");
+
+            cst.setInt(1, ubi.getId_ubigeo());
+            cst.setString(2, ubi.getRegion());
+            cst.setString(3, ubi.getDepartamento());
+            cst.setString(4, ubi.getProvincia());
+            cst.setString(5, ubi.getDistrito());
+
+            cst.executeUpdate();
+            r = 1;
+
+        } catch (Exception e) {
+            System.err.println("ERROR EN INSERTAR UBIGEO:");
+            e.printStackTrace();
+            r = 0;
+        } finally {
+            try { db.desconecta(); } catch (Exception e) {}
         }
-        return sw;
+
+        return r;
+    }
+
+    // ACTUALIZAR (SP: Ubigeo_Actualizar)
+    public int actualizarUbigeo(Ubigeo ubi) {
+        DbBean db = new DbBean();
+        int r = 0;
+
+        try {
+            Connection cn = db.getConnection();
+            CallableStatement cst = cn.prepareCall("{call Ubigeo_Actualizar(?,?,?,?,?)}");
+
+            cst.setInt(1, ubi.getId_ubigeo());
+            cst.setString(2, ubi.getRegion());
+            cst.setString(3, ubi.getDepartamento());
+            cst.setString(4, ubi.getProvincia());
+            cst.setString(5, ubi.getDistrito());
+
+            cst.executeUpdate();
+            r = 1;
+
+        } catch (Exception e) {
+            System.err.println("ERROR EN ACTUALIZAR UBIGEO:");
+            e.printStackTrace();
+            r = 0;
+        } finally {
+            try { db.desconecta(); } catch (Exception e) {}
+        }
+
+        return r;
+    }
+
+    // ELIMINAR (SP: Ubigeo_Eliminar)
+    public int eliminarUbigeo(int idUbi) {
+        DbBean db = new DbBean();
+        int r = 0;
+
+        try {
+            Connection cn = db.getConnection();
+            CallableStatement cst = cn.prepareCall("{call Ubigeo_Eliminar(?)}");
+            cst.setInt(1, idUbi);
+
+            cst.executeUpdate();
+            r = 1;
+
+        } catch (Exception e) {
+            System.err.println("ERROR EN ELIMINAR UBIGEO:");
+            e.printStackTrace();
+            r = 0;
+        } finally {
+            try { db.desconecta(); } catch (Exception e) {}
+        }
+
+        return r;
     }
 }

@@ -23,7 +23,7 @@ public class SelUbigeo extends javax.swing.JDialog {
     
     private void llenaTblSelUbigeo(String cad){
         Vector<Ubigeo> listUbigeo;
-        listUbigeo=ubiDao.listaUbigeo(cad);
+        listUbigeo=ubiDao.listarUbigeo(cad);
         dtm.setRowCount(0);
         for(int i=0; i<listUbigeo.size();i++){
             Vector vec=new Vector();

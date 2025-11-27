@@ -34,13 +34,15 @@ public class FrmMedicamento extends javax.swing.JInternalFrame {
     }
     private void llenaTblMedicamentos(String cad){
         
-        listaMed = medDao.listaMedicamentos(cad);
+        listaMed = medDao.listarMedicamentos(cad);
+        
         dtm.setRowCount(0); //vacía la tabla cada vez que se llene algo en el cuadro de busqueda
         for(int i=0;i<listaMed.size();i++){
             Vector vec=new Vector();
             vec.addElement(listaMed.get(i).getId_medicamento());
-            vec.addElement(listaMed.get(i).getId_categoria());
-            vec.addElement(listaMed.get(i).getId_proveedor());
+            vec.addElement(listaMed.get(i).getCategoria().getDescripcion());
+            vec.addElement(listaMed.get(i).getProveedor().getNombre());
+
             vec.addElement(listaMed.get(i).getNombre());
             vec.addElement(listaMed.get(i).getDescripcion());
             vec.addElement(listaMed.get(i).getPrecio());
@@ -135,7 +137,7 @@ public class FrmMedicamento extends javax.swing.JInternalFrame {
 
             },
             new String [] {
-                "Id Medicamento", "Id Categoria", "Id Proveedor", "Nombre", "Descripcion", "Precio", "Stock", "Fecha Venc"
+                "Id Medicamento", "Categoria", "Proveedor", "Nombre", "Descripcion", "Precio", "Stock", "Fecha Venc"
             }
         ) {
             boolean[] canEdit = new boolean [] {
@@ -401,110 +403,95 @@ public class FrmMedicamento extends javax.swing.JInternalFrame {
     }//GEN-LAST:event_txtBuscarKeyReleased
 
     private void btnGrabarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGrabarActionPerformed
-        if(valida()==true){
-            String msj;
-            Util u = new Util();
-            
-            Medicamento med = new Medicamento(); //se crea xq el procedimiento inserta proveedor requiere el parámetro de proveedor
-            
-            med.setNombre(this.txtNombre.getText());
-            med.setDescripcion(this.txtDescripcion.getText());
-            med.setPrecio(Float.parseFloat(this.txtPrecio.getText()));
-            med.setStock(Integer.parseInt(this.txtStock.getText()));
-            med.setFecha_vencimiento(this.txtFecha.getText());
-            med.setId_categoria(Integer.parseInt(this.txtIdCat.getText()));
-            med.setId_proveedor(Integer.parseInt(this.txtIdProv.getText()));
-            
-            /*if(this.cmbCategoria.getSelectedItem().toString().equals("Pastilla")){
-                med.setId_categoria(1);
-            }else if(this.cmbCategoria.getSelectedItem().toString().equals("Inyeccion")){
-                med.setId_categoria(2);
-            }else if(this.cmbCategoria.getSelectedItem().toString().equals("Jarabe")){
-                med.setId_categoria(3);
-            }else{
-                med.setId_categoria(0);
-            }
-            if(this.cmbProveedor.getSelectedItem().toString().equals("Mediplus")){
-                med.setId_proveedor(1);
-            }else if(this.cmbProveedor.getSelectedItem().toString().equals("Megamedi")){
-                med.setId_proveedor(2);
-            }else{
-                med.setId_proveedor(0);
-            }*/
+        if (valida()) {
+
+                // VALIDACIÓN DE FECHA (AJUSTE 1)
+                try {
+                    java.sql.Date.valueOf(this.txtFecha.getText().trim());
+                } catch (Exception e) {
+                    JOptionPane.showMessageDialog(this, 
+                        "La fecha debe tener formato AAAA-MM-DD");
+                    return; // NO CONTINUAR
+                }
+
+                Util u = new Util();
+                Medicamento med = new Medicamento();
 
 
-            if(this.btnGrabar.getText().equals("Grabar")){ //se crea para autogenerar la llave
-                idMed=u.idNext("medicamentos", "medicamentoID"); //es el nombre de la tabla y el nombre del campo de la llave primaria
-                med.setId_medicamento(idMed);
-                this.medDao.insertaMedicamentos(med);
-                msj="Medicamento registrado satisfactoriamente";
-            }else{
-                med.setId_medicamento(idMed);
-                this.medDao.actualizaMedicamentos(med);
-                msj="Medicamento actualizado satisfactoriamente";
-            }
-            
-            limpia();
-            llenaTblMedicamentos("");
-            JOptionPane.showMessageDialog(this, msj);
-        }
-        
+                med.setNombre(this.txtNombre.getText());
+                med.setDescripcion(this.txtDescripcion.getText());
+                med.setPrecio(Float.parseFloat(this.txtPrecio.getText()));
+                med.setStock(Integer.parseInt(this.txtStock.getText()));
+                med.setFecha_vencimiento(this.txtFecha.getText());
+                med.setId_categoria(Integer.parseInt(this.txtIdCat.getText()));
+                med.setId_proveedor(Integer.parseInt(this.txtIdProv.getText()));
+
+                int r;
+
+                // MODO INSERTAR
+                if (this.btnGrabar.getText().equals("Grabar")) {
+
+                    idMed = u.idNext("medicamentos", "medicamentoID");
+                    med.setId_medicamento(idMed);
+
+                    r = this.medDao.insertarMedicamento(med);
+
+                    if (r == 1) {
+                        JOptionPane.showMessageDialog(this, 
+                            "Medicamento registrado satisfactoriamente");
+                    } else {
+                        JOptionPane.showMessageDialog(this, 
+                            "Error al registrar medicamento");
+                    }
+
+                // MODO ACTUALIZAR
+                } else {
+
+                    med.setId_medicamento(idMed);
+                    r = this.medDao.actualizarMedicamento(med);
+
+                    if (r == 1) {
+                        JOptionPane.showMessageDialog(this, 
+                            "Medicamento actualizado satisfactoriamente");
+                    } else {
+                        JOptionPane.showMessageDialog(this, 
+                            "Error al actualizar medicamento");
+                    }
+                }
+
+                limpia();
+                llenaTblMedicamentos("");
+            }    
     }//GEN-LAST:event_btnGrabarActionPerformed
 
     private void tblMedicamentosMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblMedicamentosMouseClicked
-        DbBean db=new DbBean();
-        idx=this.tblMedicamentos.getSelectedRow();
-        this.idMed=Integer.parseInt(dtm.getValueAt(idx, 0).toString());
-        this.txtIdMedicamento.setText(dtm.getValueAt(idx, 0).toString());
-        this.txtNombre.setText(dtm.getValueAt(idx, 3).toString());
-        this.txtDescripcion.setText(dtm.getValueAt(idx, 4).toString());
-        this.txtPrecio.setText(dtm.getValueAt(idx, 5).toString());
-        this.txtStock.setText(dtm.getValueAt(idx, 6).toString());
-        this.txtFecha.setText(dtm.getValueAt(idx, 7).toString());
-        this.txtIdCat.setText(dtm.getValueAt(idx, 1).toString());
-        this.txtIdProv.setText(dtm.getValueAt(idx, 2).toString());
-        String sql="select desccategoria from categoria where categoriaid = "+this.dtm.getValueAt(idx, 1).toString();
-        try {
-            ResultSet rstCategorias = db.resultadoSQL(sql);
-            if (rstCategorias.next()) {
-                this.txtCategoria.setText(rstCategorias.getString(1));
-            }
-        } catch (SQLException ex) {
-            Logger.getLogger(FrmMedicamento.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        String sql2="select nombre from proveedores where proveedorid = "+this.dtm.getValueAt(idx, 2).toString();
-        try {
-            ResultSet rstProveedores = db.resultadoSQL(sql2);
-            if (rstProveedores.next()) {
-                this.txtProveedor.setText(rstProveedores.getString(1));
-            }
-        } catch (SQLException ex) {
-            Logger.getLogger(FrmMedicamento.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        
-        
-        /*if(dtm.getValueAt(idx, 1).toString().equals("1")){
-            this.cmbCategoria.setSelectedItem("Pastilla");
-        }else if(dtm.getValueAt(idx, 1).toString().equals("2")){
-            this.cmbCategoria.setSelectedItem("Inyeccion");
-        }else if(dtm.getValueAt(idx, 1).toString().equals("3")){
-            this.cmbCategoria.setSelectedItem("Jarabe");
-        }else{
-            this.cmbCategoria.setSelectedItem("");
-        }
-        
-        if(dtm.getValueAt(idx, 2).toString().equals("1")){
-            this.cmbProveedor.setSelectedItem("Mediplus");
-        }else if(dtm.getValueAt(idx, 2).toString().equals("2")){
-            this.cmbProveedor.setSelectedItem("Megamedi");
-        }else{
-            this.cmbProveedor.setSelectedItem("");
-        }
-        */
-        this.btnGrabar.setText("Actualizar");
-        
-        this.btnEliminar.setEnabled(true);
-        
+        idx = tblMedicamentos.getSelectedRow();
+        if (idx == -1) return;
+
+        Medicamento m = listaMed.get(idx);
+
+        // ID
+        idMed = m.getId_medicamento();
+        txtIdMedicamento.setText(String.valueOf(m.getId_medicamento()));
+
+        // Datos básicos
+        txtNombre.setText(m.getNombre());
+        txtDescripcion.setText(m.getDescripcion());
+        txtPrecio.setText(String.valueOf(m.getPrecio()));
+        txtStock.setText(String.valueOf(m.getStock()));
+        txtFecha.setText(m.getFecha_vencimiento());
+
+        // Categoría
+        txtIdCat.setText(String.valueOf(m.getCategoria().getId_categoria()));
+        txtCategoria.setText(m.getCategoria().getDescripcion());
+
+        // Proveedor
+        txtIdProv.setText(String.valueOf(m.getProveedor().getId_proveedor()));
+        txtProveedor.setText(m.getProveedor().getNombre());
+
+        // Modo actualización
+        btnGrabar.setText("Actualizar");
+        btnEliminar.setEnabled(true);        
     }//GEN-LAST:event_tblMedicamentosMouseClicked
 
     private void btnSalirActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSalirActionPerformed
@@ -512,16 +499,28 @@ public class FrmMedicamento extends javax.swing.JInternalFrame {
     }//GEN-LAST:event_btnSalirActionPerformed
 
     private void btnEliminarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEliminarActionPerformed
-        //int idMed;
-        //idMed=Integer.parseInt(dtm.getValueAt(idx, 0).toString());
-        if(this.medDao.eliminaMedicamentos(idMed)==true){
-            JOptionPane.showMessageDialog(this, "Medicamento eliminado satisfactoriamente");
-            this.llenaTblMedicamentos("");
-            limpia();
-        }else{
-            JOptionPane.showMessageDialog(this, "No es posible eliminar el Medicamento, consulte con el DBA");
+         int fila = this.tblMedicamentos.getSelectedRow();
+
+        if (fila == -1) {
+            JOptionPane.showMessageDialog(this,
+                "Debe seleccionar un medicamento para eliminar");
+            return;
         }
-        limpia();
+
+        int id = Integer.parseInt(dtm.getValueAt(fila, 0).toString());
+
+        int r = this.medDao.eliminarMedicamento(id);
+
+        if (r == 1) {
+            JOptionPane.showMessageDialog(this,
+                "Medicamento eliminado satisfactoriamente");
+            limpia(); // PRIMERO limpiar campos
+            llenaTblMedicamentos(""); // LUEGO recargar tabla         
+
+        } else {
+            JOptionPane.showMessageDialog(this,
+                "No se pudo eliminar el medicamento");
+        }
     }//GEN-LAST:event_btnEliminarActionPerformed
 
     private void txtFechaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtFechaActionPerformed

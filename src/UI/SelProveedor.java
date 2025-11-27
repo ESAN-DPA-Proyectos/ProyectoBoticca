@@ -21,7 +21,7 @@ public class SelProveedor extends javax.swing.JDialog {
     
     private void llenaTblSelProv(String cad){
         Vector<Proveedor> listProveedores;
-        listProveedores=provDao.listaProveedores(cad);
+        listProveedores=provDao.listarProveedores(cad);
         dtm.setRowCount(0);
         for(int i=0; i<listProveedores.size();i++){
             Vector vec=new Vector();

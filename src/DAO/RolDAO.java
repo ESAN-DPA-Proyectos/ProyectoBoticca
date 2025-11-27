@@ -1,116 +1,125 @@
-
 package DAO;
-
 
 import BEAN.Rol;
 import UTIL.DbBean;
+import java.sql.CallableStatement;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.util.Vector;
 
 public class RolDAO {
-    public Vector<Rol> listaRol(String cad){
-        DbBean db=new DbBean();
-               
-        Vector<Rol> listaRol = new Vector<Rol>();
-        
-        String sql;
-        sql= "select * from rol ";
-        if(!cad.isEmpty()){ //con este if se agrega el where en el query sql
-            sql=sql+" where descRol like '%"+ cad +"%'";
-        }
-        try{
-            ResultSet rstAreas = db.resultadoSQL(sql);
-            while(rstAreas.next()){
-                Rol rol = new Rol();
-                rol.setId_rol(rstAreas.getInt(1));
-                rol.setDescripcion(rstAreas.getString(2));
-                rol.setRequisito(rstAreas.getString(3));
-                rol.setAniosexp(rstAreas.getInt(4));
-                rol.setSueldo(rstAreas.getInt(5));
-                listaRol.addElement(rol);
-            }
-        }catch(java.sql.SQLException e){
-            e.printStackTrace();
-        }
-        try{
-            db.desconecta();
-        }catch(java.sql.SQLException e){
-            e.printStackTrace();
-        }
-                
-        return listaRol;
-    }
-    public void insertaRols(Rol rol){
-        DbBean db=new DbBean();
-        String sql;
-        try{
-            sql="insert into rol values (";
-            sql=sql+" "+ rol.getId_rol() +", ";
-            sql=sql+" '"+ rol.getDescripcion() +"', ";
-            sql=sql+" '"+ rol.getRequisito() +"', ";
-            sql=sql+" '"+ rol.getAniosexp() +"', ";
-            sql=sql+" "+ rol.getSueldo() +") ";
-            
-            
-            System.out.println("\nDPA"+sql);
-            
-            db.ejecutaSQL(sql);
-        }catch(java.sql.SQLException e){
-            e.printStackTrace();
-        }
-        try{
-            db.desconecta();
-        }catch(java.sql.SQLException e){
-            e.printStackTrace();
-        }
-                
-    }
-    public void actualizaRols(Rol rol) {
+
+    // LISTAR (usa SP Rol_Listar)
+    public Vector<Rol> listarRoles(String cad) {
         DbBean db = new DbBean();
-        String sql;
+        Vector<Rol> lista = new Vector<>();
 
         try {
-            sql = "UPDATE Rol SET ";
-            sql += "descRol = '" + rol.getDescripcion() + "', ";
-            sql += "requisito = '" + rol.getRequisito() + "', ";
-            sql += "anioExpReq = " + rol.getAniosexp() + ", ";
-            sql += "sueldo = " + rol.getSueldo() + " ";
-            sql += "WHERE RolID = " + rol.getId_rol();
+            Connection cn = db.getConnection();
+            CallableStatement cst = cn.prepareCall("{call Rol_Listar(?)}");
+            cst.setString(1, cad);  // puede ser vacío o texto a buscar
 
-            System.out.println("\nSQL UPDATE ROL -> " + sql);   // para verlo en Output
+            ResultSet rs = cst.executeQuery();
 
-            db.ejecutaSQL(sql);
+            while (rs.next()) {
+                Rol r = new Rol();
+                r.setId_rol(rs.getInt("RolID"));
+                r.setDescripcion(rs.getString("descRol"));
+                r.setRequisito(rs.getString("requisito"));
+                r.setAniosexp(rs.getInt("anioExpReq"));
+                r.setSueldo(rs.getFloat("sueldo"));
+                lista.add(r);
+            }
 
-        } catch (java.sql.SQLException e) {
+        } catch (Exception e) {
+            System.err.println("ERROR EN LISTAR ROLES:");
             e.printStackTrace();
         } finally {
-            try {
-                db.desconecta();
-            } catch (java.sql.SQLException e) {
-                e.printStackTrace();
-            }
+            try { db.desconecta(); } catch (Exception e) {}
         }
+
+        return lista;
     }
-    public boolean eliminaRols(int idRol){
-        //verificando la no dependencia de la tabla det_venta
-        boolean sw = false;
-        DbBean db=new DbBean();       
-        //Vector<Rol> listaRol = new Vector<Rol>();
-        
-        String sql;
-        sql= "select * from contrato where rolID= "+ idRol +"";
 
-        try{
-            ResultSet rstContrato = db.resultadoSQL(sql);
+    // INSERTAR (usa SP Rol_Insertar)
+    public int insertarRol(Rol rol) {
+        DbBean db = new DbBean();
+        int r = 0;
 
-            if (!rstContrato.next()){
-                sql="delete from rol where rolID="+idRol+"";
-                db.ejecutaSQL(sql);
-                sw=true;
-            }
-        }catch(java.sql.SQLException e){
-            
+        try {
+            Connection cn = db.getConnection();
+            CallableStatement cst = cn.prepareCall("{call Rol_Insertar(?,?,?,?,?)}");
+
+            cst.setInt(1, rol.getId_rol());
+            cst.setString(2, rol.getDescripcion());
+            cst.setString(3, rol.getRequisito());
+            cst.setInt(4, rol.getAniosexp());
+            cst.setFloat(5, rol.getSueldo());
+
+            cst.executeUpdate();
+            r = 1; // éxito
+
+        } catch (Exception e) {
+            System.err.println("ERROR EN INSERTAR ROL:");
+            e.printStackTrace();
+            r = 0;
+        } finally {
+            try { db.desconecta(); } catch (Exception e) {}
         }
-        return sw;
+
+        return r;
+    }
+
+    // ACTUALIZAR (usa SP Rol_Actualizar)
+    public int actualizarRol(Rol rol) {
+        DbBean db = new DbBean();
+        int r = 0;
+
+        try {
+            Connection cn = db.getConnection();
+            CallableStatement cst = cn.prepareCall("{call Rol_Actualizar(?,?,?,?,?)}");
+
+            cst.setInt(1, rol.getId_rol());
+            cst.setString(2, rol.getDescripcion());
+            cst.setString(3, rol.getRequisito());
+            cst.setInt(4, rol.getAniosexp());
+            cst.setFloat(5, rol.getSueldo());
+
+            cst.executeUpdate();
+            r = 1;
+
+        } catch (Exception e) {
+            System.err.println("ERROR EN ACTUALIZAR ROL:");
+            e.printStackTrace();
+            r = 0;
+        } finally {
+            try { db.desconecta(); } catch (Exception e) {}
+        }
+
+        return r;
+    }
+
+    // ELIMINAR (usa SP Rol_Eliminar)
+    public int eliminarRol(int idRol) {
+        DbBean db = new DbBean();
+        int r = 0;
+
+        try {
+            Connection cn = db.getConnection();
+            CallableStatement cst = cn.prepareCall("{call Rol_Eliminar(?)}");
+            cst.setInt(1, idRol);
+
+            cst.executeUpdate();
+            r = 1;
+
+        } catch (Exception e) {
+            System.err.println("ERROR EN ELIMINAR ROL:");
+            e.printStackTrace();
+            r = 0;
+        } finally {
+            try { db.desconecta(); } catch (Exception e) {}
+        }
+
+        return r;
     }
 }

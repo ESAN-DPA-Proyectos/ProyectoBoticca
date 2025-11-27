@@ -27,20 +27,19 @@ public class FrmUbigeo extends javax.swing.JInternalFrame {
     }
     private void llenaTblUbigeos(String cad){
        
-        listaUbigeo = ubiDao.listaUbigeo(cad);
-        dtm.setRowCount(0); //vacía la tabla cada vez que se llene algo en el cuadro de busqueda
-        for(int i=0;i<listaUbigeo.size();i++){
-            Vector vec=new Vector();
-            vec.addElement(listaUbigeo.get(i).getId_ubigeo());
-            vec.addElement(listaUbigeo.get(i).getRegion());
-            vec.addElement(listaUbigeo.get(i).getDepartamento());
-            vec.addElement(listaUbigeo.get(i).getProvincia());
-            vec.addElement(listaUbigeo.get(i).getDistrito());
-            dtm.addRow(vec);
-        }
+    listaUbigeo = ubiDao.listarUbigeo(cad);
+    dtm.setRowCount(0);
+
+    for(int i=0;i<listaUbigeo.size();i++){
+        Vector vec=new Vector();
+        vec.addElement(listaUbigeo.get(i).getId_ubigeo());
+        vec.addElement(listaUbigeo.get(i).getRegion());
+        vec.addElement(listaUbigeo.get(i).getDepartamento());
+        vec.addElement(listaUbigeo.get(i).getProvincia());
+        vec.addElement(listaUbigeo.get(i).getDistrito());
+        dtm.addRow(vec);
     }
-    
-    
+}    
 
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
@@ -292,31 +291,47 @@ public class FrmUbigeo extends javax.swing.JInternalFrame {
     }//GEN-LAST:event_txtBuscarKeyReleased
 
     private void btnGrabarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGrabarActionPerformed
-        if(valida()==true){
-            String msj;
+        if (valida()) {
             Util u = new Util();
-            
-            Ubigeo ubi = new Ubigeo(); //se crea xq el procedimiento inserta proveedor requiere el parámetro de proveedor
-            
+            Ubigeo ubi = new Ubigeo();
+
             ubi.setRegion(this.txtRegion.getText());
             ubi.setDepartamento(this.txtDepartamento.getText());
             ubi.setProvincia(this.txtProvincia.getText());
             ubi.setDistrito(this.txtDistrito.getText());
 
-            if(this.btnGrabar.getText().equals("Grabar")){ //se crea para autogenerar la llave
-                idUbigeo=u.idNext("ubigeo", "ubigeoID"); //es el nombre de la tabla y el nombre del campo de la llave primaria
+            int r;
+
+            // INSERTAR
+            if (this.btnGrabar.getText().equals("Grabar")) {
+
+                idUbigeo = u.idNext("Ubigeo", "UbigeoID");
                 ubi.setId_ubigeo(idUbigeo);
-                this.ubiDao.insertaUbigeos(ubi);
-                msj="Ubigeo registrado satisfactoriamente";
-            }else{
+
+                r = this.ubiDao.insertarUbigeo(ubi);
+
+                if (r == 1) {
+                    JOptionPane.showMessageDialog(this, "Ubigeo registrado satisfactoriamente");
+                } else {
+                    JOptionPane.showMessageDialog(this, "Error al registrar ubigeo");
+                }
+
+            // ACTUALIZAR
+            } else {
+
                 ubi.setId_ubigeo(idUbigeo);
-                this.ubiDao.actualizaUbigeos(ubi);
-                msj="Ubigeo actualizado satisfactoriamente";
+
+                r = this.ubiDao.actualizarUbigeo(ubi);
+
+                if (r == 1) {
+                    JOptionPane.showMessageDialog(this, "Ubigeo actualizado satisfactoriamente");
+                } else {
+                    JOptionPane.showMessageDialog(this, "Error al actualizar ubigeo");
+                }
             }
-            
+
             limpia();
             llenaTblUbigeos("");
-            JOptionPane.showMessageDialog(this, msj);
         }
     }//GEN-LAST:event_btnGrabarActionPerformed
 
@@ -340,16 +355,15 @@ public class FrmUbigeo extends javax.swing.JInternalFrame {
     }//GEN-LAST:event_btnSalirActionPerformed
 
     private void btnEliminarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEliminarActionPerformed
-        //int idProd;
-        //idProd=Integer.parseInt(dtm.getValueAt(idx, 0).toString());
-        if(this.ubiDao.eliminaUbigeos(idUbigeo)==true){
+        int r = this.ubiDao.eliminarUbigeo(idUbigeo);
+
+        if (r == 1) {
             JOptionPane.showMessageDialog(this, "Ubigeo eliminado satisfactoriamente");
             this.llenaTblUbigeos("");
             limpia();
-        }else{
+        } else {
             JOptionPane.showMessageDialog(this, "No es posible eliminar el ubigeo, consulte con el DBA");
         }
-        limpia();
     }//GEN-LAST:event_btnEliminarActionPerformed
 
     private void btnPdfActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnPdfActionPerformed
@@ -361,9 +375,9 @@ public class FrmUbigeo extends javax.swing.JInternalFrame {
             String mensaje = "Hola,\n\nAdjunto encontrarás el reporte generado automáticamente.\n\nSaludos,\nSistema";
 
             List<Object> listaObjetos = new ArrayList<>(listaUbigeo);
-            ByteArrayOutputStream outputStream = PdfGenerator.generarPDFDinamico(listaObjetos, "Reporte de Proveedores");
-            MailSender.sendEmail(txtEmail.getText(), "PDF PROVEEDOR", mensaje, "REPORTE DE PROVEEDORES", outputStream);
-            JOptionPane.showMessageDialog(this, "Se envio el pdf al correo: " + txtEmail.getText() + " correctamente");
+            ByteArrayOutputStream outputStream = PdfGenerator.generarPDFDinamico(listaObjetos, "Reporte de Ubigeos");
+            MailSender.sendEmail(txtEmail.getText(), "PDF UBIGEO", mensaje, "REPORTE DE UBIGEOS", outputStream);
+            JOptionPane.showMessageDialog(this, "Se envió el pdf al correo: " + txtEmail.getText() + " correctamente");
             limpia();
         }
     }//GEN-LAST:event_btnPdfActionPerformed

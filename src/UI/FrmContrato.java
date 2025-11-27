@@ -110,7 +110,7 @@ public class FrmContrato extends javax.swing.JInternalFrame {
 
         jLabel2.setText("Id Contrato");
 
-        jLabel3.setText("Fecha inicio");
+        jLabel3.setText("Fecha inicio   (aaaa-mm-dd)");
 
         jLabel4.setText("Area");
 
@@ -121,7 +121,7 @@ public class FrmContrato extends javax.swing.JInternalFrame {
 
         jLabel7.setText("Buscar:");
         jPanel1.add(jLabel7);
-        jLabel7.setBounds(40, 40, 60, 20);
+        jLabel7.setBounds(40, 40, 60, 16);
 
         txtBuscar.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyPressed(java.awt.event.KeyEvent evt) {
@@ -189,7 +189,7 @@ public class FrmContrato extends javax.swing.JInternalFrame {
             }
         });
 
-        jLabel8.setText("Fecha fin");
+        jLabel8.setText("Fecha fin       (aaaa-mm-dd)");
 
         jLabel9.setText("Sueldo");
 
@@ -274,8 +274,6 @@ public class FrmContrato extends javax.swing.JInternalFrame {
                             .addGroup(layout.createSequentialGroup()
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addComponent(jLabel2)
-                                    .addComponent(jLabel3)
-                                    .addComponent(jLabel8)
                                     .addGroup(layout.createSequentialGroup()
                                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                             .addComponent(jLabel11)
@@ -284,8 +282,10 @@ public class FrmContrato extends javax.swing.JInternalFrame {
                                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                             .addComponent(btnBuscarArea, javax.swing.GroupLayout.PREFERRED_SIZE, 153, javax.swing.GroupLayout.PREFERRED_SIZE)
                                             .addComponent(btnBuscarEmpleado)
-                                            .addComponent(btnBuscarArea1, javax.swing.GroupLayout.PREFERRED_SIZE, 153, javax.swing.GroupLayout.PREFERRED_SIZE))))
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                            .addComponent(btnBuscarArea1, javax.swing.GroupLayout.PREFERRED_SIZE, 153, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                                        .addComponent(jLabel3, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 159, Short.MAX_VALUE)
+                                        .addComponent(jLabel8, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addGroup(layout.createSequentialGroup()
                                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
@@ -428,38 +428,59 @@ public class FrmContrato extends javax.swing.JInternalFrame {
     }//GEN-LAST:event_txtBuscarKeyReleased
 
     private void btnGrabarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGrabarActionPerformed
-        if(valida()==true){
+        if (valida() == true) {
+
             String msj;
             Util u = new Util();
-            
-            Contrato cont = new Contrato(); //se crea xq el procedimiento inserta proveedor requiere el parámetro de proveedor
-            
-            //cont.setId_contrato(Integer.parseInt(this.txtIdContrato.getText()));
+            int idCont;
+            int r;   // resultado del SP
+
+            Contrato cont = new Contrato();
+
+            // Llenas el objeto con los datos del formulario
             cont.setId_empleado(Integer.parseInt(this.txtidEmpleado.getText()));
             cont.setFecini(this.txtFechaini.getText());
             cont.setFecfin(this.txtFecfin.getText());
             cont.setId_area(Integer.parseInt(this.txtidArea.getText()));
             cont.setId_rol(Integer.parseInt(this.txtidRol.getText()));
             cont.setSueldo(Float.parseFloat(this.txtSueldo.getText()));
-            if(this.cmbEstado.getSelectedItem().toString().equals("Activo")){
+
+            if (this.cmbEstado.getSelectedItem().toString().equals("Activo")) {
                 cont.setEstado(1);
-            }else{
+            } else {
                 cont.setEstado(0);
             }
 
-            if(this.btnGrabar.getText().equals("Grabar")){ //se crea para autogenerar la llave
-                idCont=u.idNext("contrato", "contratoID"); //es el nombre de la tabla y el nombre del campo de la llave primaria
+            // INSERT
+            if (this.btnGrabar.getText().equals("Grabar")) {
+
+                // autogenerar la llave
+                idCont = u.idNext("Contrato", "ContratoID");
                 cont.setId_contrato(idCont);
-                this.contDao.procesaItem(cont,"insert");
-                msj="Contrato registrado satisfactoriamente";
-            }else{
+
+                r = this.contDao.insertarContrato(cont);
+
+                if (r > 0) {
+                    msj = "Contrato registrado satisfactoriamente";
+                } else {
+                    msj = "No se pudo registrar el contrato";
+                }
+
+            // UPDATE
+            } else {
                 cont.setId_contrato(Integer.parseInt(this.txtIdContrato.getText()));
-                this.contDao.procesaItem(cont,"update");
-                msj="Contrato actualizado satisfactoriamente";
+
+                r = this.contDao.actualizarContrato(cont);
+
+                if (r > 0) {
+                    msj = "Contrato actualizado satisfactoriamente";
+                } else {
+                    msj = "No se pudo actualizar el contrato";
+                }
             }
-            
+
             limpia();
-            llenaTblContrato(false,"");
+            llenaTblContrato(false, "");
             JOptionPane.showMessageDialog(this, msj);
         }
         
@@ -528,10 +549,20 @@ public class FrmContrato extends javax.swing.JInternalFrame {
 
     private void btnEliminarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEliminarActionPerformed
         int idVe;
-        idVe=Integer.parseInt(txtIdContrato.getText());
-        this.contDao.borraDeta(idVe);
+        idVe = Integer.parseInt(txtIdContrato.getText());
+
+        int resultado = this.contDao.eliminarContrato(idVe);   // ✅ NUEVO MÉTODO
+
+        if (resultado > 0) {
+            javax.swing.JOptionPane.showMessageDialog(this,
+                    "Contrato eliminado satisfactoriamente");
+        } else {
+            javax.swing.JOptionPane.showMessageDialog(this,
+                    "No se pudo eliminar el contrato (revise dependencias o estado)");
+        }
+
         limpia();
-        llenaTblContrato(false,"");
+        llenaTblContrato(false, "");
     }//GEN-LAST:event_btnEliminarActionPerformed
 
     private void btnBuscarEmpleadoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBuscarEmpleadoActionPerformed

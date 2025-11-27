@@ -1,109 +1,125 @@
-
 package DAO;
 
 import BEAN.Sede;
 import UTIL.DbBean;
+import java.sql.CallableStatement;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.util.Vector;
 
 public class SedeDAO {
-    public Vector<Sede> listaSede(String cad){
-        DbBean db=new DbBean();
-               
-        Vector<Sede> listaSede = new Vector<Sede>();
-        
-        String sql;
-        sql= "select * from sede ";
-        if(!cad.isEmpty()){ //con este if se agrega el where en el query sql
-            sql=sql+" where nombsede like '%"+ cad +"%'";
-        }
-        try{
-            ResultSet rstSedes = db.resultadoSQL(sql);
-            while(rstSedes.next()){
-                Sede sede = new Sede();
-                sede.setId_sede(rstSedes.getInt(1));
-                sede.setId_ubigeo(rstSedes.getInt(2));
-                sede.setNombre(rstSedes.getString(3));
-                sede.setDireccion(rstSedes.getString(4));
-                sede.setTelefono(rstSedes.getString(5));
-                listaSede.addElement(sede);
-            }
-        }catch(java.sql.SQLException e){
-            e.printStackTrace();
-        }
-        try{
-            db.desconecta();
-        }catch(java.sql.SQLException e){
-            e.printStackTrace();
-        }
-                
-        return listaSede;
-    }
-    public void insertaSedes(Sede sede){
-        DbBean db=new DbBean();
-        String sql;
-        try{
-            sql="insert into sede values (";
-            sql=sql+" "+ sede.getId_sede() +", ";
-            sql=sql+" "+ sede.getId_ubigeo() +", ";
-            sql=sql+" '"+ sede.getNombre() +"', ";
-            sql=sql+" '"+ sede.getDireccion() +"', ";
-            sql=sql+" '"+ sede.getTelefono() +"') ";
-            
-            
-            System.out.println("\nDPA"+sql);
-            
-            db.ejecutaSQL(sql);
-        }catch(java.sql.SQLException e){
-            e.printStackTrace();
-        }
-        try{
-            db.desconecta();
-        }catch(java.sql.SQLException e){
-            e.printStackTrace();
-        }
-                
-    }
-    public void actualizaSedes(Sede sede){
-        DbBean db=new DbBean();
-        String sql;
-        try{
-            sql="update sede set ";
-            sql=sql+" ubigeoid = "+sede.getId_ubigeo()+", ";
-            sql=sql+" nombsede = '"+sede.getNombre()+"', ";
-            sql=sql+" direccion = '"+sede.getDireccion()+"', ";
-            sql=sql+" tlf = '"+sede.getTelefono()+"' ";
-            sql=sql+"where sedeID = "+sede.getId_sede()+"";
-            db.ejecutaSQL(sql);
-        }catch(java.sql.SQLException e){
-            e.printStackTrace();
-        }
-        try{
-            db.desconecta();
-        }catch(java.sql.SQLException e){
-            e.printStackTrace();
-        }
-    }
-    public boolean eliminaSedes(int idSede){
-        //verificando la no dependencia de la tabla det_venta
-        boolean sw = false;
-        DbBean db=new DbBean();       
-        Vector<Sede> listaArea = new Vector<Sede>();
-        
-        String sql;
-        sql= "select * from ventas where sedeID= "+ idSede +"";
 
-        try{
-            ResultSet rstContrato = db.resultadoSQL(sql);
+    // LISTAR (usa SP Sede_Listar)
+    public Vector<Sede> listarSede(String cad) {
+        DbBean db = new DbBean();
+        Vector<Sede> lista = new Vector<>();
 
-            if (!rstContrato.next()){
-                sql="delete from sede where sedeID="+idSede+"";
-                db.ejecutaSQL(sql);
-                sw=true;
+        try {
+            Connection cn = db.getConnection();
+            CallableStatement cst = cn.prepareCall("{call Sede_Listar(?)}");
+            cst.setString(1, cad);  // puede ser vacío o nombre a buscar
+
+            ResultSet rs = cst.executeQuery();
+
+            while (rs.next()) {
+                Sede s = new Sede();
+                s.setId_sede(rs.getInt("SedeID"));
+                s.setId_ubigeo(rs.getInt("UbigeoId"));
+                s.setNombre(rs.getString("NombSede"));
+                s.setDireccion(rs.getString("Direccion"));
+                s.setTelefono(rs.getString("Tlf"));
+                lista.add(s);
             }
-        }catch(java.sql.SQLException e){
-            
+
+        } catch (Exception e) {
+            System.err.println("ERROR EN LISTAR SEDES:");
+            e.printStackTrace();
+        } finally {
+            try { db.desconecta(); } catch (Exception e) {}
         }
-        return sw;
+
+        return lista;
+    }
+
+    // INSERTAR (usa SP Sede_Insertar)
+    public int insertarSede(Sede sede) {
+        DbBean db = new DbBean();
+        int r = 0;
+
+        try {
+            Connection cn = db.getConnection();
+            CallableStatement cst = cn.prepareCall("{call Sede_Insertar(?,?,?,?,?)}");
+
+            cst.setInt(1, sede.getId_sede());
+            cst.setInt(2, sede.getId_ubigeo());
+            cst.setString(3, sede.getNombre());
+            cst.setString(4, sede.getDireccion());
+            cst.setString(5, sede.getTelefono());
+
+            cst.executeUpdate();
+            r = 1;   // Éxito
+
+        } catch (Exception e) {
+            System.err.println("ERROR EN INSERTAR SEDE:");
+            e.printStackTrace();
+            r = 0;
+        } finally {
+            try { db.desconecta(); } catch (Exception e) {}
+        }
+
+        return r;
+    }
+
+    // ACTUALIZAR (usa SP Sede_Actualizar)
+    public int actualizarSede(Sede sede) {
+        DbBean db = new DbBean();
+        int r = 0;
+
+        try {
+            Connection cn = db.getConnection();
+            CallableStatement cst = cn.prepareCall("{call Sede_Actualizar(?,?,?,?,?)}");
+
+            cst.setInt(1, sede.getId_sede());
+            cst.setInt(2, sede.getId_ubigeo());
+            cst.setString(3, sede.getNombre());
+            cst.setString(4, sede.getDireccion());
+            cst.setString(5, sede.getTelefono());
+
+            cst.executeUpdate();
+            r = 1;
+
+        } catch (Exception e) {
+            System.err.println("ERROR EN ACTUALIZAR SEDE:");
+            e.printStackTrace();
+            r = 0;
+        } finally {
+            try { db.desconecta(); } catch (Exception e) {}
+        }
+
+        return r;
+    }
+
+    // ELIMINAR (usa SP Sede_Eliminar)
+    public int eliminarSede(int idSede) {
+        DbBean db = new DbBean();
+        int r = 0;
+
+        try {
+            Connection cn = db.getConnection();
+            CallableStatement cst = cn.prepareCall("{call Sede_Eliminar(?)}");
+            cst.setInt(1, idSede);
+
+            cst.executeUpdate();
+            r = 1;
+
+        } catch (Exception e) {
+            System.err.println("ERROR EN ELIMINAR SEDE:");
+            e.printStackTrace();
+            r = 0;
+        } finally {
+            try { db.desconecta(); } catch (Exception e) {}
+        }
+
+        return r;
     }
 }

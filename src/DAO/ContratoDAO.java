@@ -2,105 +2,146 @@ package DAO;
 
 import BEAN.Contrato;
 import UTIL.DbBean;
+import java.sql.CallableStatement;
+import java.sql.Connection;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.Vector;
 
 public class ContratoDAO {
-        public Vector<Contrato> listaItem(boolean sw, String str){
-        Vector<Contrato> item = new Vector<Contrato>();
-        DbBean con = new DbBean();
-        String sql = "select a.ContratoID,concat(b.Apellido,' ',b.Nombre),a.Fech_Ini,a.Fech_Fin,c.descArea,d.descRol,d.sueldo,b.empleadoid,c.areaid,d.rolid,a.estado "
-                + "from  contrato a "
-                + "left join empleados b "
-                + "on a.EmpleadoID=b.EmpleadoID "
-                + "left join area c "
-                + "on a.AreaID=c.AreaID "
-                + "left join rol d "
-                + "on a.RolID=d.RolID";
-        if(sw == true){
-            sql = sql + " WHERE b.Apellido like '%"+ str +"%' or b.Nombre= '%"+ str+"'";
-        }
-        System.out.println(sql);
-        try{
-            ResultSet resultado = con.resultadoSQL(sql);
 
-            while(resultado.next()){
-                Contrato detVenta = new Contrato();
-                detVenta.setId_contrato(resultado.getInt(1));
-                detVenta.setEmpleado(resultado.getString(2));
-                detVenta.setFecini(resultado.getString(3));
-                detVenta.setFecfin(resultado.getString(4));
-                detVenta.setArea(resultado.getString(5));
-                detVenta.setRol(resultado.getString(6));
-                detVenta.setSueldo(resultado.getFloat(7));
-                detVenta.setId_empleado(resultado.getInt(8));
-                detVenta.setId_area(resultado.getInt(9));
-                detVenta.setId_rol(resultado.getInt(10));
-                detVenta.setEstado(resultado.getInt(1));
-                item.addElement(detVenta);
+    /** LISTAR CONTRATOS (usa SP Contrato_Listar) **/
+    public Vector<Contrato> listaItem(boolean sw, String str) {
+
+        Vector<Contrato> lista = new Vector<>();
+        DbBean db = new DbBean();
+
+        try {
+            Connection cn = db.getConnection();
+            CallableStatement cst = cn.prepareCall("{call Contrato_Listar(?)}");
+
+            // si sw es true se manda el filtro, si no, se manda cadena vacía
+            if (sw && str != null) {
+                cst.setString(1, str);
+            } else {
+                cst.setString(1, "");
             }
-        }catch(java.sql.SQLException e){
-            e.printStackTrace();
-        }
-        try{
-            con.desconecta();
-        }catch(SQLException e){}
-        System.out.println("checkpoint");
-        return item;
-       
-    }
-    
-    public void borraDeta(int idVe){
-       int resultado=0;
-       String sql= "";
-       DbBean con=new DbBean();
-       sql="delete from contrato  WHERE contratoid = "+ idVe +"";
-       System.out.println("Del dv "+sql);
-       try{
-          resultado=con.ejecutaSQL(sql);
-        }
-        catch(java.sql.SQLException e){e.printStackTrace();
-        }
-        try{
-            con.desconecta();
-        }catch(SQLException e){
-        }
-        
-    }
-    
-    
-    public int procesaItem(Contrato ct, String proc){
-       int resultado=0;
-       String sql= "";
-       DbBean con=new DbBean();
-       System.out.println("test de proceso");
-       if(proc.equals("insert")){
-            sql="INSERT INTO contrato VALUES ("+ ct.getId_contrato() +", "
-                    + ct.getId_empleado() +", '"+ ct.getFecini()+"', '"
-                    + ct.getFecfin()+"', "+ ct.getId_area() +", "+ ct.getId_rol() +", "
-                    + ct.getSueldo() +", "+ ct.getEstado() +")";
-            System.out.println("EVallll: "+sql);
-       }
-       if(proc.equals("update")){
-            sql="UPDATE contrato set Fech_ini  = '"+ ct.getFecini() +"',"
-                    + " Fech_fin = '"+ ct.getFecfin() +"', areaID = "+ ct.getId_area() +","
-                    + " sueldo = '"+ ct.getSueldo() +"', estado = "+ ct.getEstado() +""
-                    + " where contratoid = "+ ct.getId_contrato();
-       }
-       System.out.println("Observando el estado de la sentencia sql: "+sql);
 
-       try{
-          resultado=con.ejecutaSQL(sql);
+            ResultSet rs = cst.executeQuery();
+
+            while (rs.next()) {
+                Contrato ct = new Contrato();
+
+                ct.setId_contrato(rs.getInt("ContratoID"));
+                ct.setEmpleado(rs.getString("Empleado"));
+                ct.setFecini(rs.getString("Fech_Ini"));
+                ct.setFecfin(rs.getString("Fech_Fin"));
+                ct.setArea(rs.getString("DescArea"));
+                ct.setRol(rs.getString("DescRol"));
+                ct.setSueldo(rs.getFloat("Sueldo"));
+                ct.setId_empleado(rs.getInt("EmpleadoID"));
+                ct.setId_area(rs.getInt("AreaID"));
+                ct.setId_rol(rs.getInt("RolID"));
+                ct.setEstado(rs.getInt("Estado"));
+
+                lista.add(ct);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            try { db.desconecta(); } catch (Exception e) {}
         }
-        catch(java.sql.SQLException e){e.printStackTrace();
+
+        return lista;
+    }
+
+    /*--------------------------------------------------------------------------*/
+
+    /** INSERTAR CONTRATO (Contrato_Insertar) **/
+    public int insertarContrato(Contrato ct) {
+
+        DbBean db = new DbBean();
+        int resultado = 0;
+
+        try {
+            Connection cn = db.getConnection();
+            CallableStatement cst = cn.prepareCall("{call Contrato_Insertar(?,?,?,?,?,?,?,?)}");
+
+            cst.setInt(1, ct.getId_contrato());
+            cst.setInt(2, ct.getId_empleado());
+            cst.setString(3, ct.getFecini());   // formato 'YYYY-MM-DD'
+            cst.setString(4, ct.getFecfin());
+            cst.setInt(5, ct.getId_area());
+            cst.setInt(6, ct.getId_rol());
+            cst.setFloat(7, ct.getSueldo());
+            cst.setInt(8, ct.getEstado());
+
+            cst.executeUpdate();   // si no lanza excepción, asumimos éxito
+            resultado = 1;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            resultado = 0;
+        } finally {
+            try { db.desconecta(); } catch (Exception e) {}
         }
-        try{
-        con.desconecta();
+
+        return resultado;
+    }
+
+    /** ACTUALIZAR CONTRATO (Contrato_Actualizar) **/
+    public int actualizarContrato(Contrato ct) {
+
+        DbBean db = new DbBean();
+        int resultado = 0;
+
+        try {
+            Connection cn = db.getConnection();
+            CallableStatement cst = cn.prepareCall("{call Contrato_Actualizar(?,?,?,?,?,?,?,?)}");
+
+            cst.setInt(1, ct.getId_contrato());
+            cst.setInt(2, ct.getId_empleado());
+            cst.setString(3, ct.getFecini());
+            cst.setString(4, ct.getFecfin());
+            cst.setInt(5, ct.getId_area());
+            cst.setInt(6, ct.getId_rol());
+            cst.setFloat(7, ct.getSueldo());
+            cst.setInt(8, ct.getEstado());
+
+            cst.executeUpdate();
+            resultado = 1;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            resultado = 0;
+        } finally {
+            try { db.desconecta(); } catch (Exception e) {}
         }
-        catch(SQLException e){
+
+        return resultado;
+    }
+
+    /** ELIMINAR CONTRATO (Contrato_Eliminar) **/
+    public int eliminarContrato(int idContrato) {
+
+        DbBean db = new DbBean();
+        int resultado = 0;
+
+        try {
+            Connection cn = db.getConnection();
+            CallableStatement cst = cn.prepareCall("{call Contrato_Eliminar(?)}");
+            cst.setInt(1, idContrato);
+
+            cst.executeUpdate();
+            resultado = 1;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            resultado = 0;
+        } finally {
+            try { db.desconecta(); } catch (Exception e) {}
         }
-          return resultado;
-      } 
-    
+
+        return resultado;
+    }
 }

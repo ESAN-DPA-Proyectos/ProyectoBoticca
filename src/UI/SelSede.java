@@ -23,7 +23,7 @@ public class SelSede extends javax.swing.JDialog {
     
     private void llenaTblSelSede(String cad){
         Vector<Sede> listaEmpl;
-        listaEmpl=sedeDao.listaSede(cad);
+        listaEmpl=sedeDao.listarSede(cad);
         dtm.setRowCount(0);
         for(int i=0; i<listaEmpl.size();i++){
             Vector vec=new Vector();

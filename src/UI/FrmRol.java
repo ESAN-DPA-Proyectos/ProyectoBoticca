@@ -26,23 +26,22 @@ public class FrmRol extends javax.swing.JInternalFrame {
         llenaTblRoles("");
     }
 
-    private void llenaTblRoles(String cad){
+    private void llenaTblRoles(String cad) {
 
-    listaRol = rolDao.listaRol(cad);
-    dtm.setRowCount(0);
+        listaRol = rolDao.listarRoles(cad);   // antes: listaRol = rolDao.listaRol(cad);
+        dtm.setRowCount(0);
 
-    for (int i = 0; i < listaRol.size(); i++) {
-        Vector vec = new Vector();
-        Rol r = listaRol.get(i);
-        vec.addElement(r.getId_rol());
-        vec.addElement(r.getDescripcion());
-        vec.addElement(r.getRequisito());
-        vec.addElement(r.getAniosexp());
-        vec.addElement(r.getSueldo());
-        dtm.addRow(vec);
+        for (int i = 0; i < listaRol.size(); i++) {
+            Vector vec = new Vector();
+            Rol r = listaRol.get(i);
+            vec.addElement(r.getId_rol());
+            vec.addElement(r.getDescripcion());
+            vec.addElement(r.getRequisito());
+            vec.addElement(r.getAniosexp());
+            vec.addElement(r.getSueldo());
+            dtm.addRow(vec);
+        }
     }
-}
-
 
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
@@ -304,48 +303,68 @@ public class FrmRol extends javax.swing.JInternalFrame {
     }//GEN-LAST:event_txtBuscarKeyReleased
 
     private void btnGrabarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGrabarActionPerformed
-        if (valida() == true) {
-            String msj;
-            Util u = new Util();
+        if (valida()) {
 
+            Util u = new Util();
             Rol rol = new Rol();
 
             rol.setDescripcion(this.txtDescripcion.getText());
-            rol.setRequisito(this.txtObservaciones.getText());  // si usas este textbox como requisito
-            // si creas txtRequisito aparte, usa ese
-            rol.setAniosexp(Integer.parseInt(this.txtAnioExp.getText()));   // nuevo campo
-            rol.setSueldo(Float.parseFloat(this.txtSueldo.getText()));      // nuevo campo
+            rol.setRequisito(this.txtObservaciones.getText());
+            rol.setAniosexp(Integer.parseInt(this.txtAnioExp.getText()));
+            rol.setSueldo(Float.parseFloat(this.txtSueldo.getText()));
 
+            int r;
+
+            // MODO INSERTAR
             if (this.btnGrabar.getText().equals("Grabar")) {
-                idRol = u.idNext("Rol", "RolID");        // usa nombres reales de la tabla
+
+                idRol = u.idNext("Rol", "RolID");
                 rol.setId_rol(idRol);
-                this.rolDao.insertaRols(rol);
-                msj = "Rol registrado satisfactoriamente";
+
+                r = this.rolDao.insertarRol(rol);
+
+                if (r == 1) {
+                    JOptionPane.showMessageDialog(this, "Rol registrado satisfactoriamente");
+                } else {
+                    JOptionPane.showMessageDialog(this, "Error al registrar rol");
+                }
+
+            // MODO ACTUALIZAR
             } else {
+
                 rol.setId_rol(idRol);
-                this.rolDao.actualizaRols(rol);
-                msj = "Rol actualizado satisfactoriamente";
+
+                r = this.rolDao.actualizarRol(rol);
+
+                if (r == 1) {
+                    JOptionPane.showMessageDialog(this, "Rol actualizado satisfactoriamente");
+                } else {
+                    JOptionPane.showMessageDialog(this, "Error al actualizar rol");
+                }
             }
 
             limpia();
             llenaTblRoles("");
-            JOptionPane.showMessageDialog(this, msj);
         }
     }//GEN-LAST:event_btnGrabarActionPerformed
 
     private void tblRolMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblRolMouseClicked
         
-    idx = this.tblRol.getSelectedRow();
-    this.idRol = Integer.parseInt(dtm.getValueAt(idx, 0).toString());
+        idx = this.tblRol.getSelectedRow();
+        if (idx == -1) return;
 
-    this.txtIdRol.setText(dtm.getValueAt(idx, 0).toString());  // puedes renombrar luego a txtIdRol
-    this.txtDescripcion.setText(dtm.getValueAt(idx, 1).toString());
-    this.txtObservaciones.setText(dtm.getValueAt(idx, 2).toString());  // requisito
-    this.txtAnioExp.setText(dtm.getValueAt(idx, 3).toString());
-    this.txtSueldo.setText(dtm.getValueAt(idx, 4).toString());
+        Rol r = listaRol.get(idx);
 
-    this.btnGrabar.setText("Actualizar");
-    this.btnEliminar.setEnabled(true);
+        this.idRol = r.getId_rol();
+
+        this.txtIdRol.setText(String.valueOf(r.getId_rol()));
+        this.txtDescripcion.setText(r.getDescripcion());
+        this.txtObservaciones.setText(r.getRequisito());
+        this.txtAnioExp.setText(String.valueOf(r.getAniosexp()));
+        this.txtSueldo.setText(String.valueOf(r.getSueldo()));
+
+        this.btnGrabar.setText("Actualizar");
+        this.btnEliminar.setEnabled(true);
     }//GEN-LAST:event_tblRolMouseClicked
 
     private void btnSalirActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSalirActionPerformed
@@ -353,10 +372,9 @@ public class FrmRol extends javax.swing.JInternalFrame {
     }//GEN-LAST:event_btnSalirActionPerformed
 
     private void btnEliminarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEliminarActionPerformed
-        if (this.rolDao.eliminaRols(idRol) == true) {
+        if (this.rolDao.eliminarRol(idRol) == 1) {
             JOptionPane.showMessageDialog(this, "Rol eliminado satisfactoriamente");
             this.llenaTblRoles("");
-            limpia();
         } else {
             JOptionPane.showMessageDialog(this, "No es posible eliminar el rol, consulte con el DBA");
         }
@@ -366,15 +384,15 @@ public class FrmRol extends javax.swing.JInternalFrame {
     private void btnPdfActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnPdfActionPerformed
         String mensajeError = Util.validaCorreoYTabla(txtEmail.getText(), listaRol.isEmpty());
 
-        if(!mensajeError.isEmpty()){
+        if (!mensajeError.isEmpty()) {
             JOptionPane.showMessageDialog(this, mensajeError);
         } else {
             String mensaje = "Hola,\n\nAdjunto encontrarás el reporte generado automáticamente.\n\nSaludos,\nSistema";
 
             List<Object> listaObjetos = new ArrayList<>(listaRol);
-            ByteArrayOutputStream outputStream = PdfGenerator.generarPDFDinamico(listaObjetos, "Reporte de Categoria");
-            MailSender.sendEmail(txtEmail.getText(), "PDF CATEGORIA", mensaje, "REPORTE DE CATEGORIAS", outputStream);
-            JOptionPane.showMessageDialog(this, "Se envio el pdf al correo: " + txtEmail.getText() + " correctamente");
+            ByteArrayOutputStream outputStream = PdfGenerator.generarPDFDinamico(listaObjetos, "Reporte de Roles");
+            MailSender.sendEmail(txtEmail.getText(), "PDF ROL", mensaje, "REPORTE DE ROLES", outputStream);
+            JOptionPane.showMessageDialog(this, "Se envió el pdf al correo: " + txtEmail.getText() + " correctamente");
             limpia();
         }
 

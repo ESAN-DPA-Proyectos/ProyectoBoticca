@@ -4,86 +4,124 @@ package DAO;
 import BEAN.Sede;
 import BEAN.cab_venta;
 import UTIL.DbBean;
+
+import java.sql.CallableStatement;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.Vector;
 
 public class cab_ventaDAO {
-    public Vector<cab_venta> listaItem(boolean sw, String str){
-        Vector<cab_venta> item = new Vector<cab_venta>();
+    public Vector<cab_venta> listaItem(boolean sw, String str) {
+        Vector<cab_venta> item = new Vector<>();
         DbBean con = new DbBean();
-        String sql = "Select a.ventaid,CONCAT(c.Apellido,' ',c.Nombre),a.FechaVenta,b.NombSede,a.Estado "
-                + "from ventas a "
-                + "left join sede b on a.SedeId=b.SedeID "
-                + "left join Empleados c "
-                + "on a.EmpleadoID=c.EmpleadoID";
-        if(sw == true){
-            sql = sql + " WHERE a.clienteid = '"+ str +"'";
-        }
-        System.out.println(sql);
-        try{
-            ResultSet resultado = con.resultadoSQL(sql);
+        Connection cn = null;
+        CallableStatement cst = null;
+        ResultSet rs = null;
 
-            while(resultado.next()){
-                cab_venta cabVenta = new cab_venta();
-                cabVenta.setId_venta(resultado.getInt(1));
-                cabVenta.setEmpleado(resultado.getString(2));
-                cabVenta.setFecha(resultado.getString(3));
-                cabVenta.setSede(resultado.getString(4));
-                cabVenta.setEstado(resultado.getInt(5));
-                item.addElement(cabVenta);
+        try {
+            cn = con.getConnection();
+            // Llamamos al SP Venta_Listar(@ClienteID)
+            cst = cn.prepareCall("{call Venta_Listar(?)}");
+
+            if (sw) {
+                // str es el Id del cliente para filtrar
+                cst.setInt(1, Integer.parseInt(str));
+            } else {
+                cst.setNull(1, Types.INTEGER);
             }
-        }catch(java.sql.SQLException e){
+
+            rs = cst.executeQuery();
+
+            while (rs.next()) {
+                cab_venta cv = new cab_venta();
+                cv.setId_venta(rs.getInt("VentaID"));
+                cv.setEmpleado(rs.getString("Empleado"));
+                cv.setFecha(rs.getString("FechaVenta"));
+                cv.setSede(rs.getString("NombSede"));
+                cv.setEstado(rs.getInt("Estado"));
+                item.add(cv);
+            }
+
+        } catch (Exception e) {
+            System.err.println("ERROR EN LISTAR VENTA:");
             e.printStackTrace();
+        } finally {
+            try { if (rs != null) rs.close(); } catch (Exception ex) {}
+            try { if (cst != null) cst.close(); } catch (Exception ex) {}
+            try { con.desconecta(); } catch (Exception ex) {}
         }
-        try{
-            con.desconecta();
-        }catch(SQLException e){}
+
         return item;
     }
+
     
-    public void borraCab(int idVe){
-       int resultado=0;
-       String sql= "";
-       DbBean con=new DbBean();
-       sql="delete from ventas WHERE ventaid = "+ idVe +"";
-       System.out.println("Del cv "+sql);
-       try{
-          resultado=con.ejecutaSQL(sql);
+    public int borraCab(int idVe) {
+        int r = 0;
+        DbBean con = new DbBean();
+        Connection cn = null;
+        CallableStatement cst = null;
+
+        try {
+            cn = con.getConnection();
+            cst = cn.prepareCall("{call Venta_Eliminar(?)}");
+            cst.setInt(1, idVe);
+            r = cst.executeUpdate();
+        } catch (Exception e) {
+            System.err.println("ERROR EN ELIMINAR CABECERA VENTA:");
+            e.printStackTrace();
+            r = 0;
+        } finally {
+            try { if (cst != null) cst.close(); } catch (Exception ex) {}
+            try { con.desconecta(); } catch (Exception ex) {}
         }
-        catch(java.sql.SQLException e){e.printStackTrace();
-        }
-        try{
-            con.desconecta();
-        }catch(SQLException e){
-        }
-        
+
+        return r;
     }
     
     public int procesaItem(cab_venta cv, String proc){
-       int resultado=0;
-       String sql= "";
-       DbBean con=new DbBean();
-       if(proc.equals("insert")){
-            sql="INSERT INTO ventas VALUES ('"+ cv.getId_venta() +"', '"+ cv.getId_cliente() +"', '"+ cv.getId_empleado() +"', '"+ cv.getFecha() +"', '"+ cv.getId_sede() +"' ,'"+ cv.getEstado() +"')";
-            System.out.println("uuuuuuu" + sql);
-       }
-       if(proc.equals("update")){
-            sql="UPDATE ventas set fechaventa = '"+ cv.getFecha() +"', empleadoid = '"+ cv.getId_empleado() +"', estado = '"+ cv.getEstado() +"', sedeid = '"+ cv.getId_sede() +"' where ventaid = '"+ cv.getId_venta() +"'";
-       }
-       System.out.println("Observando el estado de la sentencia sql: "+sql);
+        int resultado = 0;
+        String sql = "";
+        DbBean con = new DbBean();
 
-       try{
-          resultado=con.ejecutaSQL(sql);
+        // Usamos SP Venta_Insertar y Venta_Actualizar
+        if (proc.equals("insert")) {
+            sql = "EXEC Venta_Insertar "
+                    + cv.getId_venta() + ", "
+                    + cv.getId_cliente() + ", "
+                    + cv.getId_empleado() + ", '"
+                    + cv.getFecha() + "', "
+                    + cv.getId_sede() + ", "
+                    + cv.getEstado();
+            System.out.println("SQL INSERT (SP): " + sql);
         }
-        catch(java.sql.SQLException e){e.printStackTrace();
+
+        if (proc.equals("update")) {
+            sql = "EXEC Venta_Actualizar "
+                    + cv.getId_venta() + ", "
+                    + cv.getId_cliente() + ", "
+                    + cv.getId_empleado() + ", '"
+                    + cv.getFecha() + "', "
+                    + cv.getId_sede() + ", "
+                    + cv.getEstado();
+            System.out.println("SQL UPDATE (SP): " + sql);
         }
-        try{
-        con.desconecta();
+
+        System.out.println("Observando el estado de la sentencia sql: " + sql);
+
+        try {
+            resultado = con.ejecutaSQL(sql);
+        } catch (java.sql.SQLException e) {
+            e.printStackTrace();
         }
-        catch(SQLException e){
+
+        try {
+            con.desconecta();
+        } catch (SQLException e) {
         }
-          return resultado;
-      }
-    
+
+        return resultado;
+    }
+
 }

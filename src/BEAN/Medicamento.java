@@ -1,7 +1,7 @@
-
 package BEAN;
 
 public class Medicamento {
+
     private int id_medicamento;
     private int id_categoria;
     private int id_proveedor;
@@ -11,11 +11,16 @@ public class Medicamento {
     private int stock;
     private String fecha_vencimiento;
 
+    // NUEVOS CAMPOS (PARA MOSTRAR DATOS EN LA TABLA)
+    private Categoria categoria;
+    private Proveedor proveedor;
+
     public Medicamento() {
     }
 
-    public Medicamento(int id_medicamento, int id_categoria, int id_proveedor, 
+    public Medicamento(int id_medicamento, int id_categoria, int id_proveedor,
             String nombre, String descripcion, Float precio, int stock, String fecha_vencimiento) {
+
         this.id_medicamento = id_medicamento;
         this.id_categoria = id_categoria;
         this.id_proveedor = id_proveedor;
@@ -24,9 +29,9 @@ public class Medicamento {
         this.precio = precio;
         this.stock = stock;
         this.fecha_vencimiento = fecha_vencimiento;
-
     }
 
+    // GETTERS Y SETTERS EXISTENTES
     public int getId_medicamento() {
         return id_medicamento;
     }
@@ -91,6 +96,20 @@ public class Medicamento {
         this.fecha_vencimiento = fecha_vencimiento;
     }
 
-    
-    
+    // NUEVOS GETTERS/SETTERS PARA CATEGORIA Y PROVEEDOR
+    public Categoria getCategoria() {
+        return categoria;
+    }
+
+    public void setCategoria(Categoria categoria) {
+        this.categoria = categoria;
+    }
+
+    public Proveedor getProveedor() {
+        return proveedor;
+    }
+
+    public void setProveedor(Proveedor proveedor) {
+        this.proveedor = proveedor;
+    }
 }

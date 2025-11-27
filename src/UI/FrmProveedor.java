@@ -29,7 +29,7 @@ public class FrmProveedor extends javax.swing.JInternalFrame {
     }
     private void llenaTblProveedores(String cad){
         
-        listaProv = provDao.listaProveedores(cad);
+        listaProv = provDao.listarProveedores(cad);
         dtm.setRowCount(0); //vacía la tabla cada vez que se llene algo en el cuadro de busqueda
         for(int i=0;i<listaProv.size();i++){
             Vector vec=new Vector();
@@ -364,11 +364,11 @@ public class FrmProveedor extends javax.swing.JInternalFrame {
             if(this.btnGrabar.getText().equals("Grabar")){ //se crea para autogenerar la llave
                 idProv=u.idNext("Proveedores", "ProveedorID"); //es el nombre de la tabla y el nombre del campo de la llave primaria
                 prov.setId_proveedor(idProv);
-                this.provDao.insertaProveedores(prov);
+                this.provDao.insertarProveedor(prov);
                 msj="Proveedor registrado satisfactoriamente";
             }else{
                 prov.setId_proveedor(idProv);
-                this.provDao.actualizaProveedores(prov);
+                this.provDao.actualizarProveedor(prov);
                 msj="Proveedor actualizado satisfactoriamente";
             }
             
@@ -380,21 +380,32 @@ public class FrmProveedor extends javax.swing.JInternalFrame {
 
     private void tblProveedoresMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblProveedoresMouseClicked
         
-        idx=this.tblProveedores.getSelectedRow();
-        this.idProv=Integer.parseInt(dtm.getValueAt(idx, 0).toString());
-        this.txtIdProveedor.setText(dtm.getValueAt(idx, 0).toString());
-        this.txtNombre.setText(dtm.getValueAt(idx, 1).toString());
-        this.txtNombreContacto.setText(dtm.getValueAt(idx, 2).toString());
-        this.txtDireccion.setText(dtm.getValueAt(idx, 3).toString());
-        this.cmbCiudad.setSelectedItem(dtm.getValueAt(idx, 4).toString());
-        this.txtTelefono.setText(dtm.getValueAt(idx, 5).toString());
-        if(dtm.getValueAt(idx, 6).toString().equals("1")){
+        idx = this.tblProveedores.getSelectedRow();
+        if (idx == -1) return;
+
+        // Obtener el objeto completo desde la lista
+        Proveedor p = listaProv.get(idx);
+
+        // Guardamos el ID para actualizar/eliminar
+        this.idProv = p.getId_proveedor();
+
+        // Llenamos los campos
+        this.txtIdProveedor.setText(String.valueOf(p.getId_proveedor()));
+        this.txtNombre.setText(p.getNombre());
+        this.txtNombreContacto.setText(p.getNombreContacto());
+        this.txtDireccion.setText(p.getDireccion());
+        this.cmbCiudad.setSelectedItem(p.getCiudad());
+        this.txtTelefono.setText(p.getTelefono());
+
+        // Estado en combo
+        if (p.getEstado() == 1) {
             this.cmbEstado.setSelectedItem("Activo");
-        }else{
+        } else {
             this.cmbEstado.setSelectedItem("No Activo");
         }
+
+        // Cambiar modo
         this.btnGrabar.setText("Actualizar");
-        
         this.btnEliminar.setEnabled(true);
     }//GEN-LAST:event_tblProveedoresMouseClicked
 
@@ -403,30 +414,37 @@ public class FrmProveedor extends javax.swing.JInternalFrame {
     }//GEN-LAST:event_btnSalirActionPerformed
 
     private void btnEliminarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEliminarActionPerformed
-        //int idProd;
-        //idProd=Integer.parseInt(dtm.getValueAt(idx, 0).toString());
-        if(this.provDao.eliminaProveedores(idProv)==true){
+        if (this.provDao.eliminarProveedor(idProv) == 1) {
             JOptionPane.showMessageDialog(this, "Proveedor eliminado satisfactoriamente");
             this.llenaTblProveedores("");
-            limpia();
-        }else{
-            JOptionPane.showMessageDialog(this, "No es posibl eliminar al proveedor, consulte con el DBA");
+        } else {
+            JOptionPane.showMessageDialog(this, "No es posible eliminar al proveedor, consulte con el DBA");
         }
+
         limpia();
     }//GEN-LAST:event_btnEliminarActionPerformed
 
     private void btnPdfActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnPdfActionPerformed
         String mensajeError = Util.validaCorreoYTabla(txtEmail.getText(), listaProv.isEmpty());
 
-        if(!mensajeError.isEmpty()){
+        if (!mensajeError.isEmpty()) {
             JOptionPane.showMessageDialog(this, mensajeError);
         } else {
+
             String mensaje = "Hola,\n\nAdjunto encontrarás el reporte generado automáticamente.\n\nSaludos,\nSistema";
 
             List<Object> listaObjetos = new ArrayList<>(listaProv);
             ByteArrayOutputStream outputStream = PdfGenerator.generarPDFDinamico(listaObjetos, "Reporte de Proveedores");
-            MailSender.sendEmail(txtEmail.getText(), "PDF PROVEEDOR", mensaje, "REPORTE DE PROVEEDORES", outputStream);
-            JOptionPane.showMessageDialog(this, "Se envio el pdf al correo: " + txtEmail.getText() + " correctamente");
+
+            MailSender.sendEmail(
+                txtEmail.getText(),
+                "PDF PROVEEDOR",
+                mensaje,
+                "REPORTE DE PROVEEDORES",
+                outputStream
+            );
+
+            JOptionPane.showMessageDialog(this, "Se envió el pdf al correo: " + txtEmail.getText() + " correctamente");
             limpia();
         }
     }//GEN-LAST:event_btnPdfActionPerformed

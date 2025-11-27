@@ -1,115 +1,140 @@
-
 package DAO;
 
 import BEAN.InstAcademica;
 import UTIL.DbBean;
+import java.sql.CallableStatement;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.util.Vector;
 
 public class InstAcademicaDAO {
-    public Vector<InstAcademica> listaInstAcademica(String cad){
-        DbBean db=new DbBean();
-               
-        Vector<InstAcademica> listaInst = new Vector<InstAcademica>();
-        
-        String sql;
-        sql= "select * from InstAcademica ";
-        if(!cad.isEmpty()){ //con este if se agrega el where en el query sql
-            sql=sql+" where NombInstitucio like '%"+ cad +"%'";
-        }
-        try{
-            ResultSet rstInstitucion = db.resultadoSQL(sql);
-            while(rstInstitucion.next()){
+
+    /** LISTAR (SP: InstAcademica_Listar) **/
+    public Vector<InstAcademica> listaInstAcademica(String busqueda) {
+
+        Vector<InstAcademica> lista = new Vector<>();
+        DbBean db = new DbBean();
+
+        try {
+            Connection cn = db.getConnection();
+            CallableStatement cst = cn.prepareCall("{call InstAcademica_Listar(?)}");
+
+            if (busqueda == null || busqueda.trim().isEmpty()) {
+                cst.setString(1, "");
+            } else {
+                cst.setString(1, busqueda);
+            }
+
+            ResultSet rs = cst.executeQuery();
+
+            while (rs.next()) {
                 InstAcademica inst = new InstAcademica();
-                inst.setId_institucion(rstInstitucion.getInt(1));
-                inst.setNombre_institucion(rstInstitucion.getString(2));
-                inst.setTipo(rstInstitucion.getString(3));
-                inst.setWeb(rstInstitucion.getString(4));
-                inst.setContacto(rstInstitucion.getString(5));
-                inst.setTelefono(rstInstitucion.getString(6));
-                inst.setEstado(rstInstitucion.getInt(7));
-                listaInst.addElement(inst);
-            }
-        }catch(java.sql.SQLException e){
-            e.printStackTrace();
-        }
-        try{
-            db.desconecta();
-        }catch(java.sql.SQLException e){
-            e.printStackTrace();
-        }
-                
-        return listaInst;
-    }
-    public void insertaInstAcademica(InstAcademica inst){
-        DbBean db=new DbBean();
-        String sql;
-        try{
-            sql="insert into InstAcademica values (";
-            sql=sql+" "+ inst.getId_institucion() +", ";
-            sql=sql+" '"+ inst.getNombre_institucion() +"', ";
-            sql=sql+" '"+ inst.getTipo() +"', ";
-            sql=sql+" '"+ inst.getWeb() +"', ";
-            sql=sql+" '"+ inst.getContacto() +"', ";
-            sql=sql+" '"+ inst.getTelefono() +"', ";
-            sql=sql+" "+ inst.getEstado() +") ";
-            
-            
-            System.out.println("\nDPA"+sql);
-            
-            db.ejecutaSQL(sql);
-        }catch(java.sql.SQLException e){
-            e.printStackTrace();
-        }
-        try{
-            db.desconecta();
-        }catch(java.sql.SQLException e){
-            e.printStackTrace();
-        }
-                
-    }
-    public void actualizaInstAcademica(InstAcademica inst){
-        DbBean db=new DbBean();
-        String sql;
-        try{
-            sql="update InstAcademica set ";
-            sql=sql+" NombInstitucio = '"+inst.getNombre_institucion()+"', ";
-            sql=sql+" TipoInst = '"+inst.getTipo()+"', ";
-            sql=sql+" web = '"+inst.getWeb()+"', ";
-            sql=sql+" Contacto = '"+inst.getContacto()+"', ";
-            sql=sql+" tlf = '"+inst.getTelefono()+"', ";
-            sql=sql+" estado = '"+inst.getEstado()+"' ";
-            sql=sql+"where institucionID = "+inst.getId_institucion()+"";
-            db.ejecutaSQL(sql);
-        }catch(java.sql.SQLException e){
-            e.printStackTrace();
-        }
-        try{
-            db.desconecta();
-        }catch(java.sql.SQLException e){
-            e.printStackTrace();
-        }
-    }
-    public boolean eliminaInstAcademica(int idInst){
-        //verificando la no dependencia de la tabla det_venta
-        boolean sw = false;
-        DbBean db=new DbBean();       
-        Vector<InstAcademica> listaInst = new Vector<InstAcademica>();
-        
-        String sql;
-        sql= "select * from Det_CV_Acad where institucionID= "+ idInst +"";
 
-        try{
-            ResultSet rstDetalle = db.resultadoSQL(sql);
+                inst.setId_institucion(rs.getInt("InstitucionID"));
+                inst.setNombre_institucion(rs.getString("NombInstitucio"));
+                inst.setTipo(rs.getString("TipoInst"));
+                inst.setWeb(rs.getString("Web"));
+                inst.setContacto(rs.getString("Contacto"));
+                inst.setTelefono(rs.getString("Tlf"));
+                inst.setEstado(rs.getInt("Estado"));
 
-            if (!rstDetalle.next()){
-                sql="delete from InstAcademica where institucionID="+idInst+"";
-                db.ejecutaSQL(sql);
-                sw=true;
+                lista.add(inst);
             }
-        }catch(java.sql.SQLException e){
-            
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            try { db.desconecta(); } catch (Exception ex) {}
         }
-        return sw;
+
+        return lista;
+    }
+
+    /** INSERTAR (SP: InstAcademica_Insertar) **/
+    public int insertaInstAcademica(InstAcademica inst) {
+
+        DbBean db = new DbBean();
+        int resultado = 0;
+
+        try {
+            Connection cn = db.getConnection();
+
+            CallableStatement cst = cn.prepareCall("{call InstAcademica_Insertar(?,?,?,?,?,?,?)}");
+            cst.setInt(1, inst.getId_institucion());
+            cst.setString(2, inst.getNombre_institucion());
+            cst.setString(3, inst.getTipo());
+            cst.setString(4, inst.getWeb());
+            cst.setString(5, inst.getContacto());
+            cst.setString(6, inst.getTelefono());
+            cst.setInt(7, inst.getEstado());
+
+            cst.execute();
+            resultado = 1;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            resultado = 0;
+
+        } finally {
+            try { db.desconecta(); } catch (Exception e) {}
+        }
+
+        return resultado;
+    }
+
+    /** ACTUALIZAR (SP: InstAcademica_Actualizar) **/
+    public int actualizaInstAcademica(InstAcademica inst) {
+
+        DbBean db = new DbBean();
+        int resultado = 0;
+
+        try {
+            Connection cn = db.getConnection();
+
+            CallableStatement cst = cn.prepareCall("{call InstAcademica_Actualizar(?,?,?,?,?,?,?)}");
+            cst.setInt(1, inst.getId_institucion());
+            cst.setString(2, inst.getNombre_institucion());
+            cst.setString(3, inst.getTipo());
+            cst.setString(4, inst.getWeb());
+            cst.setString(5, inst.getContacto());
+            cst.setString(6, inst.getTelefono());
+            cst.setInt(7, inst.getEstado());
+
+            cst.execute();
+            resultado = 1;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            resultado = 0;
+
+        } finally {
+            try { db.desconecta(); } catch (Exception ex) {}
+        }
+
+        return resultado;
+    }
+
+    /** ELIMINAR (SP: InstAcademica_Eliminar) **/
+    public int eliminaInstAcademica(int idInst) {
+
+        DbBean db = new DbBean();
+        int resultado = 0;
+
+        try {
+            Connection cn = db.getConnection();
+            CallableStatement cst = cn.prepareCall("{call InstAcademica_Eliminar(?)}");
+            cst.setInt(1, idInst);
+
+            resultado = cst.executeUpdate();  // se espera 1 si elimina
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            resultado = 0;
+
+        } finally {
+            try { db.desconecta(); } catch (Exception e) {}
+        }
+
+        return resultado;
     }
 }

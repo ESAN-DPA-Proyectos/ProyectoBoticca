@@ -1,116 +1,133 @@
-
 package DAO;
 
 import BEAN.Proveedor;
 import UTIL.DbBean;
+import java.sql.CallableStatement;
+import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Vector;
 
 public class ProveedorDAO {
-    public Vector<Proveedor> listaProveedores(String cad){
-        DbBean db=new DbBean();
-               
-        Vector<Proveedor> listaProv = new Vector<Proveedor>();
-        
-        String sql;
-        sql= "select * from proveedores ";
-        if(!cad.isEmpty()){ //con este if se agrega el where en el query sql
-            sql=sql+" where nombre like '%"+ cad +"%'";
+
+    // INSERTAR
+    public int insertarProveedor(Proveedor p) {
+        DbBean db = new DbBean();
+        int r = 0;
+
+        try {
+            Connection cn = db.getConnection();
+            CallableStatement cst = cn.prepareCall("{call Proveedor_Insertar(?,?,?,?,?,?,?)}");
+
+            cst.setInt(1, p.getId_proveedor());
+            cst.setString(2, p.getNombre());
+            cst.setString(3, p.getNombreContacto());
+            cst.setString(4, p.getDireccion());
+            cst.setString(5, p.getCiudad());
+            cst.setString(6, p.getTelefono());
+            cst.setInt(7, p.getEstado());
+
+            r = cst.executeUpdate();
+
+        } catch (Exception e) {
+            System.err.println("ERROR EN INSERTAR PROVEEDOR:");
+            e.printStackTrace();
+            r = 0;
+        } finally {
+            try { db.desconecta(); } catch (Exception e) {}
         }
-        try{
-            ResultSet rstProveedores = db.resultadoSQL(sql);
-            while(rstProveedores.next()){
-                Proveedor prov = new Proveedor();
-                prov.setId_proveedor(rstProveedores.getInt(1));
-                prov.setNombre(rstProveedores.getString(2));
-                prov.setNombreContacto(rstProveedores.getString(3));
-                prov.setDireccion(rstProveedores.getString(4));
-                prov.setCiudad(rstProveedores.getString(5));
-                prov.setTelefono(rstProveedores.getString(6));
-                prov.setEstado(rstProveedores.getInt(7));
-                listaProv.addElement(prov);
+        return r;
+    }
+
+    // ACTUALIZAR
+    public int actualizarProveedor(Proveedor p) {
+        DbBean db = new DbBean();
+        int r = 0;
+
+        try {
+            Connection cn = db.getConnection();
+            CallableStatement cst = cn.prepareCall("{call Proveedor_Actualizar(?,?,?,?,?,?,?)}");
+
+            cst.setInt(1, p.getId_proveedor());
+            cst.setString(2, p.getNombre());
+            cst.setString(3, p.getNombreContacto());
+            cst.setString(4, p.getDireccion());
+            cst.setString(5, p.getCiudad());
+            cst.setString(6, p.getTelefono());
+            cst.setInt(7, p.getEstado());
+
+            r = cst.executeUpdate();
+
+        } catch (Exception e) {
+            System.err.println("ERROR EN ACTUALIZAR PROVEEDOR:");
+            e.printStackTrace();
+            r = 0;
+        } finally {
+            try { db.desconecta(); } catch (Exception e) {}
+        }
+        return r;
+    }
+
+    // ELIMINAR
+    public int eliminarProveedor(int id) {
+        DbBean db = new DbBean();
+        int r = 0;
+
+        try {
+            Connection cn = db.getConnection();
+            CallableStatement cst = cn.prepareCall("{call Proveedor_Eliminar(?)}");
+            cst.setInt(1, id);
+
+            // Ejecutamos, pero NO usamos el valor de retorno de executeUpdate
+            cst.executeUpdate();
+
+            // Si llegó hasta aquí, consideramos que fue OK
+            r = 1;
+
+        } catch (Exception e) {
+            System.err.println("ERROR EN ELIMINAR PROVEEDOR:");
+            e.printStackTrace();
+            r = 0;  // error
+        } finally {
+            try { db.desconecta(); } catch (Exception e) {}
+        }
+        return r;
+}
+
+
+    // LISTAR
+    public Vector<Proveedor> listarProveedores(String cad) {
+        DbBean db = new DbBean();
+        Vector<Proveedor> lista = new Vector<>();
+
+        try {
+            Connection cn = db.getConnection();
+            CallableStatement cst = cn.prepareCall("{call Proveedor_Listar(?)}");
+            cst.setString(1, cad);
+
+            ResultSet rs = cst.executeQuery();
+
+            while (rs.next()) {
+                Proveedor p = new Proveedor();
+
+                p.setId_proveedor(rs.getInt("ProveedorID"));
+                p.setNombre(rs.getString("Nombre"));
+                p.setNombreContacto(rs.getString("NombreContacto"));
+                p.setDireccion(rs.getString("Direccion"));
+                p.setCiudad(rs.getString("Ciudad"));
+                p.setTelefono(rs.getString("Telefono"));
+                p.setEstado(rs.getInt("Estado"));
+
+                lista.add(p);
             }
-        }catch(java.sql.SQLException e){
+
+        } catch (SQLException e) {
+            System.err.println("ERROR EN LISTAR PROVEEDORES:");
             e.printStackTrace();
+        } finally {
+            try { db.desconecta(); } catch (Exception e) {}
         }
-        try{
-            db.desconecta();
-        }catch(java.sql.SQLException e){
-            e.printStackTrace();
-        }
-                
-        return listaProv;
-    }
-    public void insertaProveedores(Proveedor prov){
-        DbBean db=new DbBean();
-        String sql;
-        try{
-            sql="insert into proveedores values (";
-            sql=sql+" "+ prov.getId_proveedor() +", ";
-            sql=sql+" '"+ prov.getNombre() +"', ";
-            sql=sql+" '"+ prov.getNombreContacto() +"', ";
-            sql=sql+" '"+ prov.getDireccion() +"', ";
-            sql=sql+" '"+ prov.getCiudad() +"', ";
-            sql=sql+" '"+ prov.getTelefono() +"', ";
-            sql=sql+" "+ prov.getEstado() +") ";
-            
-            
-            System.out.println("\nDPA"+sql);
-            
-            db.ejecutaSQL(sql);
-        }catch(java.sql.SQLException e){
-            e.printStackTrace();
-        }
-        try{
-            db.desconecta();
-        }catch(java.sql.SQLException e){
-            e.printStackTrace();
-        }
-                
-    }
-    public void actualizaProveedores(Proveedor prov){
-        DbBean db=new DbBean();
-        String sql;
-        try{
-            sql="update proveedores set ";
-            sql=sql+" nombre = '"+prov.getNombre()+"', ";
-            sql=sql+" nombrecontacto = '"+prov.getNombreContacto()+"', ";
-            sql=sql+" direccion = '"+prov.getDireccion()+"', ";
-            sql=sql+" ciudad = '"+prov.getCiudad()+"', ";
-            sql=sql+" telefono = '"+prov.getTelefono()+"', ";
-            sql=sql+" estado = '"+prov.getEstado()+"' ";
-            sql=sql+"where proveedorID = "+prov.getId_proveedor()+"";
-            db.ejecutaSQL(sql);
-        }catch(java.sql.SQLException e){
-            e.printStackTrace();
-        }
-        try{
-            db.desconecta();
-        }catch(java.sql.SQLException e){
-            e.printStackTrace();
-        }
-    }
-    public boolean eliminaProveedores(int idProv){
-        //verificando la no dependencia de la tabla det_venta
-        boolean sw = false;
-        DbBean db=new DbBean();       
-        Vector<Proveedor> listaProv = new Vector<Proveedor>();
-        
-        String sql;
-        sql= "select * from Compras where ProveedorID= "+ idProv +"";
-        String sql2;
-        sql2= "select * from Medicamentos where ProveedorID= "+ idProv +"";
-        try{
-            ResultSet rstCompras = db.resultadoSQL(sql);
-            ResultSet rstMedicamentos = db.resultadoSQL(sql2);
-            if (!rstCompras.next() && !rstMedicamentos.next()){
-                sql="delete from Proveedores where ProveedorID="+idProv+"";
-                db.ejecutaSQL(sql);
-                sw=true;
-            }
-        }catch(java.sql.SQLException e){
-            
-        }
-        return sw;
+
+        return lista;
     }
 }
