@@ -71,10 +71,10 @@ public class FrmVentas extends javax.swing.JFrame { //JFrame
     
     private void llenaTblCabVenta(boolean sw,String cad){
         Vector<cab_venta> listaItem;
-        listaItem=cabDao.listaItem(sw,cad);
+        listaItem = cabDao.listaItem(sw, cad);
         dtml.setRowCount(0);
-        for(int i=0; i<listaItem.size();i++){
-            Vector vec=new Vector();
+        for(int i = 0; i < listaItem.size(); i++){
+            Vector vec = new Vector();
             vec.addElement(listaItem.get(i).getId_venta());
             vec.addElement(listaItem.get(i).getEmpleado());
             vec.addElement(listaItem.get(i).getFecha());
@@ -82,11 +82,10 @@ public class FrmVentas extends javax.swing.JFrame { //JFrame
             vec.addElement(listaItem.get(i).getEstado());
             dtml.addRow(vec);
         }
-        
-        this.jTabbedPane1.setSelectedIndex(0);
-        dtml2 = (DefaultTableModel)this.tblProducto.getModel();
-        
+        // NO cambiamos de pestaña aquí
+        // NO reasignamos dtml2 (ya se hace en el constructor)
     }
+
     
     private void llenaTblDetVenta(boolean sw,String cad){
         
@@ -107,10 +106,10 @@ public class FrmVentas extends javax.swing.JFrame { //JFrame
     
     private void llenaTblActCabVenta(boolean sw,String cad){
         Vector<cab_venta> listaItem;
-        listaItem=cabDao.listaItem(sw,cad);
+        listaItem = cabDao.listaItem(sw, cad);
         dtml4.setRowCount(0);
-        for(int i=0; i<listaItem.size();i++){
-            Vector vec=new Vector();
+        for(int i = 0; i < listaItem.size(); i++){
+            Vector vec = new Vector();
             vec.addElement(listaItem.get(i).getId_venta());
             vec.addElement(listaItem.get(i).getEmpleado());
             vec.addElement(listaItem.get(i).getFecha());
@@ -118,11 +117,9 @@ public class FrmVentas extends javax.swing.JFrame { //JFrame
             vec.addElement(listaItem.get(i).getEstado());
             dtml4.addRow(vec);
         }
-        
-        this.jTabbedPane1.setSelectedIndex(0);
-        dtml2 = (DefaultTableModel)this.tblProducto.getModel();
-        
+        // Sin cambiar de pestaña
     }
+
     
     private void llenaTblActDetVenta(boolean sw,String cad){
         Vector<det_venta> listaItem;
@@ -1012,22 +1009,22 @@ public class FrmVentas extends javax.swing.JFrame { //JFrame
     }// </editor-fold>//GEN-END:initComponents
 
     private void tblClienteMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblClienteMouseClicked
+        // 1. Verificar que haya una fila seleccionada
         int idx = this.tblCliente.getSelectedRow();
         if (idx == -1) {
-            return; // Nada seleccionado, no hacemos nada
+            return; // no hay selección válida
         }
 
-        // Obtener directamente el ID del cliente desde la tabla
+        // 2. Obtener el ID del cliente directamente desde la tabla
         String idCli = this.tblCliente.getValueAt(idx, 0).toString().trim();
         this.txtClieCod.setText(idCli);
 
-        // Cada vez que cambias de cliente:
-        // 1) recargas las ventas de ese cliente
-        // 2) limpias la selección de venta y su detalle
+        // 3. Cargar siempre las ventas filtradas por ese cliente
         llenaTblCabVenta(true, idCli);
 
+        // 4. Limpiar la venta y el detalle anteriores
         this.txtCabCod.setText("");
-        dtml3.setRowCount(0);  // limpia la tabla tblDetVenta
+        dtml3.setRowCount(0);    // limpia la tabla tblDetVenta
     }//GEN-LAST:event_tblClienteMouseClicked
 
     private void txtBuscarKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtBuscarKeyReleased
@@ -1086,11 +1083,21 @@ public class FrmVentas extends javax.swing.JFrame { //JFrame
     }//GEN-LAST:event_btnBuscarMedActionPerformed
 
     private void btnLimpiarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLimpiarActionPerformed
+            // Limpia pestaña Ventas
         limpiaDetalle();
         limpiaCabecera();
         dtml2.setRowCount(0);
+
+        // Limpia pestaña Buscar Ventas
         limpiaPrimeraHoja();
+
+        // Limpia pestaña Actualizar
+        limpiaActualizar();
+
+        // Volver a modo "Grabar" para el botón principal
         this.btnGrabar.setText("Grabar");
+
+        // Si quieres, puedes recargar listas de Actualizar (no es obligatorio)
         llenaTblActCabVenta(false,"");
         llenaTblActDetVenta(false,"");
     }//GEN-LAST:event_btnLimpiarActionPerformed
@@ -1102,8 +1109,12 @@ public class FrmVentas extends javax.swing.JFrame { //JFrame
         DbBean con = new DbBean();
         String fech;
 
+        String modo = this.btnGrabar.getText();
+
+        // =========================
         // MODO 1: GRABAR NUEVA VENTA
-        if (this.btnGrabar.getText().equals("Grabar")) {
+        // =========================
+        if (modo.equals("Grabar")) {
             if (this.txtIdCliente.getText().isEmpty()
                     || dtml2.getRowCount() == 0
                     || this.txtSede.getText().isEmpty()
@@ -1115,6 +1126,7 @@ public class FrmVentas extends javax.swing.JFrame { //JFrame
                 // Insertando en la cabecera: cab_venta
                 idVent = u.idNext("ventas", "ventaid"); // tabla, campo llave
                 fech = u.obtenerFecha();
+
                 cab_venta cv = new cab_venta();
                 cv.setId_venta(idVent);
                 cv.setId_cliente(Integer.parseInt(this.txtIdCliente.getText()));
@@ -1146,8 +1158,57 @@ public class FrmVentas extends javax.swing.JFrame { //JFrame
                 this.jTabbedPane1.setSelectedIndex(0);
             }
 
-        // MODO 2: ACTUALIZAR DETALLE (pestaña Actualizar)
-        } else { 
+        // =========================
+        // MODO 2: ACTUALIZAR CABECERA (pestaña Actualizar)
+        // =========================
+        } else if (modo.equals("Actualizar cabecera")) {
+
+            if (this.txtEmpleado2.getText().isEmpty()
+                    || this.txtSede2.getText().isEmpty()
+                    || this.txtCabCod.getText().isEmpty()
+                    || this.txtIdCliente.getText().isEmpty()) {
+
+                JOptionPane.showMessageDialog(this,
+                        "Debe seleccionar una venta, sede y empleado para actualizar la cabecera");
+            } else {
+                try {
+                    fech = u.obtenerFecha();
+
+                    cab_venta cv = new cab_venta();
+                    cv.setId_venta(Integer.parseInt(this.txtCabCod.getText()));
+                    cv.setId_cliente(Integer.parseInt(this.txtIdCliente.getText()));
+                    cv.setId_empleado(Integer.parseInt(this.txtIdEmpleado.getText()));
+                    cv.setFecha(fech);
+                    cv.setId_sede(Integer.parseInt(this.txtIdSede.getText()));
+
+                    if (this.cmbEstado.getSelectedItem().toString().equals("Activo")) {
+                        cv.setEstado(1);
+                    } else {
+                        cv.setEstado(0);
+                    }
+
+                    this.cabDao.procesaItem(cv, "update");
+
+                    // Refrescar la pestaña Actualizar
+                    llenaTblActCabVenta(false, "");
+                    llenaTblActDetVenta(true, this.txtCabCod.getText());
+
+                    this.jTabbedPane1.setSelectedIndex(2);
+                    JOptionPane.showMessageDialog(this, "Cabecera de venta actualizada satisfactoriamente");
+
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(this,
+                            "Error en los IDs de la cabecera. Verifique los datos.",
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE);
+                    ex.printStackTrace();
+                }
+            }
+
+        // =========================
+        // MODO 3: ACTUALIZAR DETALLE (pestaña Actualizar)
+        // =========================
+        } else if (modo.equals("Actualizar detalle")) {
             if (this.txtMed2.getText().isEmpty()
                     || this.txtPrecioUnit2.getText().isEmpty()
                     || this.txtCantidad2.getText().isEmpty()) {
@@ -1170,7 +1231,7 @@ public class FrmVentas extends javax.swing.JFrame { //JFrame
         }
 
         // limpiar la tabla temporal del registro de venta
-        dtml2.setRowCount(0);
+        dtml2.setRowCount(0);        
     }//GEN-LAST:event_btnGrabarActionPerformed
 
     private void btnAgregarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAgregarActionPerformed
@@ -1211,15 +1272,17 @@ public class FrmVentas extends javax.swing.JFrame { //JFrame
     }//GEN-LAST:event_btnBuscarEmpleadoActionPerformed
 
     private void tblCabVentaMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblCabVentaMouseClicked
+        // 1. Verificar selección válida
         int idx = this.tblCabVenta.getSelectedRow();
         if (idx == -1) {
             return;
         }
 
+        // 2. Tomar el Id de la venta desde la propia tabla
         String idVenta = this.tblCabVenta.getValueAt(idx, 0).toString().trim();
         this.txtCabCod.setText(idVenta);
 
-        // Cargar siempre el detalle de la venta seleccionada
+        // 3. Cargar siempre el detalle de la venta seleccionada
         llenaTblDetVenta(true, idVenta);
     }//GEN-LAST:event_tblCabVentaMouseClicked
 
@@ -1335,84 +1398,106 @@ public class FrmVentas extends javax.swing.JFrame { //JFrame
     }//GEN-LAST:event_tblDetVentaMouseClicked
 
     private void tblActCabVentaMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblActCabVentaMouseClicked
-        DbBean con = new DbBean();
-        int idx;
-        idx = this.tblActCabVenta.getSelectedRow();
+        // 1. Verificar que haya una fila seleccionada
+        int idx = this.tblActCabVenta.getSelectedRow();
+        if (idx == -1) {
+            return;
+        }
 
-        // Datos visibles
-        this.txtCabCod.setText(dtml4.getValueAt(idx, 0).toString());
-        this.txtSede2.setText(dtml4.getValueAt(idx, 3).toString());
+        // 2. Tomar el ID de la venta desde la tabla
+        String idVentaStr = dtml4.getValueAt(idx, 0).toString().trim();
+        this.txtCabCod.setText(idVentaStr);
+
+        // 3. Mostrar los datos visibles en la pestaña Actualizar
         this.txtEmpleado2.setText(dtml4.getValueAt(idx, 1).toString());
-        if (dtml4.getValueAt(idx, 4).toString().equals("1")) {
+        // Columna 2 suele ser la fecha; si tienes un txtFecha2 lo puedes usar aquí
+        this.txtSede2.setText(dtml4.getValueAt(idx, 3).toString());
+
+        String estadoTabla = dtml4.getValueAt(idx, 4).toString();
+        if ("1".equals(estadoTabla)) {
             this.cmbEstado.setSelectedItem("Activo");
         } else {
             this.cmbEstado.setSelectedItem("No activo");
         }
 
-        // 1) Recuperar empleado
-        String queryemp = "select empleadoid from ventas where ventaid = '" 
-                          + this.txtCabCod.getText() + "'";
+        // 4. **MUY IMPORTANTE**: filtrar el detalle según esta venta
+        //    Esto actualiza "Detalle de compras del cliente"
+        llenaTblActDetVenta(true, idVentaStr);
 
+        // 5. Obtener los IDs reales con el DAO (SP Venta_Obtener)
         try {
-            ResultSet resultado = con.resultadoSQL(queryemp);
-            while (resultado.next()) {
-                this.txtIdEmpleado.setText(resultado.getString(1));
+            int idVenta = Integer.parseInt(idVentaStr);
+            cab_venta cv = this.cabDao.obtenerPorId(idVenta);
+
+            if (cv != null) {
+                this.txtIdCliente.setText(String.valueOf(cv.getId_cliente()));
+                this.txtIdEmpleado.setText(String.valueOf(cv.getId_empleado()));
+                this.txtIdSede.setText(String.valueOf(cv.getId_sede()));
+                // Si tienes un campo de fecha en Actualizar, podrías usar:
+                // this.txtFecha2.setText(cv.getFecha());
             }
-        } catch (java.sql.SQLException e) {
-            e.printStackTrace();
+        } catch (NumberFormatException ex) {
+            System.err.println("ERROR: Id de venta no válido en tblActCabVentaMouseClicked");
+            ex.printStackTrace();
         }
 
-        // 2) Recuperar sede
-        String querysede = "select sedeid from ventas where ventaid = '" 
-                           + this.txtCabCod.getText() + "'";
-        try {
-            ResultSet resultado = con.resultadoSQL(querysede);
-            while (resultado.next()) {
-                this.txtIdSede.setText(resultado.getString(1));
-            }
-        } catch (java.sql.SQLException e) {
-            e.printStackTrace();
-        }
-
-        // 3) Recuperar cliente
-        String querycli = "select clienteid from ventas where ventaid = '" 
-                          + this.txtCabCod.getText() + "'";
-        try {
-            ResultSet resultado = con.resultadoSQL(querycli);
-            while (resultado.next()) {
-                this.txtIdCliente.setText(resultado.getString(1));
-            }
-        } catch (java.sql.SQLException e) {
-            e.printStackTrace();
-        }
-
-        this.btnGrabar.setText("Actualizar detalle");
+        // 6. Poner el botón en modo "Actualizar detalle"
+        this.btnGrabar.setText("Actualizar cabecera");
     }//GEN-LAST:event_tblActCabVentaMouseClicked
 
     private void tblActDetVentaMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblActDetVentaMouseClicked
-        DbBean con = new DbBean();
-        int idx;
-        idx=this.tblActDetVenta.getSelectedRow();
-        this.txtDetCod.setText(dtml5.getValueAt(idx, 0).toString());
-        this.txtCabCod.setText(dtml5.getValueAt(idx, 1).toString());
-        this.txtMed2.setText(dtml5.getValueAt(idx, 2).toString());
-        this.txtCantidad2.setText(dtml5.getValueAt(idx, 3).toString());
-        this.txtPrecioUnit2.setText(dtml5.getValueAt(idx, 4).toString());
-
-        String querymed;
-        querymed="select medicamentoid from DetallesVenta where detalleventaid= '"+this.txtDetCod.getText()+"'";
-
-        try{
-            ResultSet resultado = con.resultadoSQL(querymed);
-
-            while(resultado.next()){
-                this.txtIdMed.setText(resultado.getString(1));
-                
-            }
-        }catch(java.sql.SQLException e){
-            e.printStackTrace();
+        // 1. Fila seleccionada
+        int idx = this.tblActDetVenta.getSelectedRow();
+        if (idx == -1) {
+            return;
         }
-        
+
+        // Columnas en dtml5 (Actualizar – Detalle de compras del cliente):
+        // 0 = Id Detalle, 1 = Id venta, 2 = Medicamento, 3 = Cantidad,
+        // 4 = Precio unit, 5 = Precio total (si la tienes)
+        String idDetStr   = dtml5.getValueAt(idx, 0).toString();
+        String idVentaStr = dtml5.getValueAt(idx, 1).toString();
+        String nomMed     = dtml5.getValueAt(idx, 2).toString();
+        String cantStr    = dtml5.getValueAt(idx, 3).toString();
+        String precStr    = dtml5.getValueAt(idx, 4).toString();
+
+        // 2. Llenar los campos visibles
+        this.txtDetCod.setText(idDetStr);      // Id detalle
+        this.txtCabCod.setText(idVentaStr);    // Id venta
+        this.txtMed2.setText(nomMed);          // Nombre medicamento
+        this.txtCantidad2.setText(cantStr);    // Cantidad
+        this.txtPrecioUnit2.setText(precStr);  // Precio unitario
+
+        // 3. Buscar el Id del medicamento usando el DAO (SP DetalleVenta_Listar)
+        int idVenta   = Integer.parseInt(idVentaStr);
+        int cantidad  = Integer.parseInt(cantStr);
+        float precioU = Float.parseFloat(precStr);
+
+        // Lista de detalles de ESA venta (usa tu det_ventaDAO.listaItem con SP)
+        Vector<det_venta> detalles = detDao.listaItem(true, String.valueOf(idVenta));
+
+        Integer idMed = null;
+        for (det_venta dv : detalles) {
+            // Comparamos por nombre, cantidad y precio unitario
+            if (dv.getMedicamento().equals(nomMed)
+                    && dv.getCantidad() == cantidad
+                    && Float.compare(dv.getPreciounit(), precioU) == 0) {
+                idMed = dv.getId_medicamento();
+                break;
+            }
+        }
+
+        if (idMed != null) {
+            this.txtIdMed.setText(String.valueOf(idMed));
+        } else {
+            this.txtIdMed.setText("");
+            JOptionPane.showMessageDialog(this,
+                    "No se pudo determinar el código del medicamento para el detalle seleccionado.",
+                    "Aviso",
+                    JOptionPane.WARNING_MESSAGE);
+        }
+
+        // 4. Poner el botón en modo "Actualizar detalle"
         this.btnGrabar.setText("Actualizar detalle");
     }//GEN-LAST:event_tblActDetVentaMouseClicked
 
@@ -1505,6 +1590,30 @@ public class FrmVentas extends javax.swing.JFrame { //JFrame
         this.txtCabCod.setText("");
         llenaTblDetVenta(false,"");
     }
+    
+    private void limpiaActualizar(){
+    // Campos de cabecera en pestaña Actualizar
+    this.txtCabCod.setText("");
+    this.txtSede2.setText("");
+    this.txtEmpleado2.setText("");
+    this.cmbEstado.setSelectedIndex(0); // o "Activo", según tu combo
+
+    // Campos de detalle en pestaña Actualizar
+    this.txtDetCod.setText("");
+    this.txtMed2.setText("");
+    this.txtCantidad2.setText("");
+    this.txtPrecioUnit2.setText("");
+
+    // IDs internos usados para el update
+    this.txtIdCliente.setText("");
+    this.txtIdEmpleado.setText("");
+    this.txtIdSede.setText("");
+    this.txtIdMed.setText("");
+
+    // Quitar selección en las tablas de la pestaña Actualizar
+    this.tblActCabVenta.clearSelection();
+    this.tblActDetVenta.clearSelection();
+}   
   
     public static void main(String args[]) {
         /* Set the Nimbus look and feel */

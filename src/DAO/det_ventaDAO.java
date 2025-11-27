@@ -23,9 +23,8 @@ public class det_ventaDAO {
             // Llamamos al SP DetalleVenta_Listar(@VentaID)
             cst = cn.prepareCall("{call DetalleVenta_Listar(?)}");
 
-            if (sw) {
-                // str es el Id de la venta a filtrar
-                cst.setInt(1, Integer.parseInt(str));
+            if (sw && str != null && !str.trim().isEmpty()) {
+                cst.setInt(1, Integer.parseInt(str.trim()));
             } else {
                 cst.setNull(1, Types.INTEGER);
             }

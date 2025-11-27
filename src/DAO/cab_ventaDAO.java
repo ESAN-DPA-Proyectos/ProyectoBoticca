@@ -123,5 +123,43 @@ public class cab_ventaDAO {
 
         return resultado;
     }
+    
+        // === OBTENER UNA VENTA POR ID (usado en pestaña Actualizar) ===
+    public cab_venta obtenerPorId(int idVenta) {
+        cab_venta cv = null;
+        DbBean db = new DbBean();
 
+        try {
+            Connection cn = db.getConnection();
+            CallableStatement cst =
+                    cn.prepareCall("{call Venta_Obtener(?)}");
+            cst.setInt(1, idVenta);
+
+            ResultSet rs = cst.executeQuery();
+            if (rs.next()) {
+                cv = new cab_venta();
+                cv.setId_venta(rs.getInt("VentaID"));
+                cv.setId_cliente(rs.getInt("ClienteID"));
+                cv.setId_empleado(rs.getInt("EmpleadoID"));
+                cv.setFecha(rs.getString("FechaVenta"));
+                cv.setId_sede(rs.getInt("SedeId"));
+                cv.setEstado(rs.getInt("Estado"));
+            }
+
+            rs.close();
+            cst.close();
+
+        } catch (Exception e) {
+            System.err.println("ERROR EN cab_ventaDAO.obtenerPorId (SP)");
+            e.printStackTrace();
+        } finally {
+            try {
+                db.desconecta();
+            } catch (Exception e) {
+                // opcional: registrar error de desconexión
+            }
+        }
+
+        return cv;
+    }
 }
