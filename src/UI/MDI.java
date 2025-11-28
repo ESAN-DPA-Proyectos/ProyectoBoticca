@@ -15,12 +15,14 @@ public class MDI extends javax.swing.JFrame {
     public MDI(Usuario u) {
         initComponents();
         this.setLocationRelativeTo(null);   // centrar ventana
-
+        //this.setExtendedState(java.awt.Frame.MAXIMIZED_BOTH); // opcional: abrir maximizado
+        
         this.usuarioActual = u;
+        actualizarTitulo();
 
         // Opcional: mostrar el usuario en el título
         if (u != null) {
-            this.setTitle("BDBOTICCA - Usuario: " + u.getNombreCompleto());
+            this.setTitle("SISTEMA BOTICCA - Usuario: " + u.getNombreCompleto());
         }
     }
 
@@ -28,6 +30,33 @@ public class MDI extends javax.swing.JFrame {
     public MDI() {
         this(null);
     }
+    
+    private void actualizarTitulo() {
+    if (usuarioActual == null) {
+        // Título por defecto si no hay usuario
+        setTitle("BDBOTICCA");
+        return;
+    }
+
+    // Ajusta estos getters a lo que tenga tu BEAN Usuario
+    String usuario = usuarioActual.getUsuario();          // ej. "admin"
+    String nombre  = usuarioActual.getNombreCompleto();   // ej. "Juan Pérez"
+
+    StringBuilder sb = new StringBuilder("BDBOTICCA - Usuario: ");
+
+    if (usuario != null && !usuario.isEmpty()) {
+        sb.append(usuario);
+    } else {
+        sb.append("?");
+    }
+
+    if (nombre != null && !nombre.isEmpty()) {
+        sb.append(" (").append(nombre).append(")");
+    }
+
+    setTitle(sb.toString());
+}
+
 
         @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
@@ -94,7 +123,7 @@ public class MDI extends javax.swing.JFrame {
 
         getContentPane().add(escritorio, java.awt.BorderLayout.CENTER);
 
-        mnuMantenimiento.setText("BDBOTICCA");
+        mnuMantenimiento.setText("MANTENIMIENTO");
         mnuMantenimiento.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 mnuMantenimientoActionPerformed(evt);
@@ -358,13 +387,14 @@ public class MDI extends javax.swing.JFrame {
     /**
      * @param args the command line arguments
      */
+    /*
     public static void main(String args[]) {
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
         /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
          * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
          */
-        try {
+    /*    try {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
                 if ("Nimbus".equals(info.getName())) {
                     javax.swing.UIManager.setLookAndFeel(info.getClassName());
@@ -383,12 +413,12 @@ public class MDI extends javax.swing.JFrame {
         //</editor-fold>
 
         /* Create and display the form */
-        java.awt.EventQueue.invokeLater(new Runnable() {
+        /*java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
                 new MDI().setVisible(true);
             }
         });
-    }
+    /*}*/
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JDesktopPane escritorio;

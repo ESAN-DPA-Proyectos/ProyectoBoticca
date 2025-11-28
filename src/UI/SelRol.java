@@ -140,7 +140,8 @@ public class SelRol extends javax.swing.JDialog {
     public Rol getRol(){
         return rol;
     }
-
+    
+    /*
     public static void main(String args[]) {
 
         java.awt.EventQueue.invokeLater(new Runnable() {
@@ -156,7 +157,8 @@ public class SelRol extends javax.swing.JDialog {
             }
         });
     }
-
+    */
+    
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;

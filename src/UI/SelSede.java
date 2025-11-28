@@ -139,6 +139,7 @@ public class SelSede extends javax.swing.JDialog {
         return sede;
     }
 
+    /*
     public static void main(String args[]) {
 
         java.awt.EventQueue.invokeLater(new Runnable() {
@@ -154,6 +155,7 @@ public class SelSede extends javax.swing.JDialog {
             }
         });
     }
+    */
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel jLabel1;

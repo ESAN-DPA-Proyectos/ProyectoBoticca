@@ -140,6 +140,7 @@ public class SelArea extends javax.swing.JDialog {
         return area;
     }
 
+    /*
     public static void main(String args[]) {
 
         java.awt.EventQueue.invokeLater(new Runnable() {
@@ -155,6 +156,7 @@ public class SelArea extends javax.swing.JDialog {
             }
         });
     }
+    */
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel jLabel1;

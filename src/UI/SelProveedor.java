@@ -142,7 +142,8 @@ public class SelProveedor extends javax.swing.JDialog {
     public Proveedor getProveedor(){
         return prov;
     }
-
+    
+    /*
     public static void main(String args[]) {
 
         java.awt.EventQueue.invokeLater(new Runnable() {
@@ -158,6 +159,7 @@ public class SelProveedor extends javax.swing.JDialog {
             }
         });
     }
+    */
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel jLabel1;

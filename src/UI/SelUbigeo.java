@@ -142,6 +142,7 @@ public class SelUbigeo extends javax.swing.JDialog {
         return ubi;
     }
 
+    /*
     public static void main(String args[]) {
 
         java.awt.EventQueue.invokeLater(new Runnable() {
@@ -157,6 +158,7 @@ public class SelUbigeo extends javax.swing.JDialog {
             }
         });
     }
+    */
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel jLabel1;

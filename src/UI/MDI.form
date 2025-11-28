@@ -49,7 +49,7 @@
       <SubComponents>
         <Menu class="javax.swing.JMenu" name="mnuMantenimiento">
           <Properties>
-            <Property name="text" type="java.lang.String" value="BDBOTICCA"/>
+            <Property name="text" type="java.lang.String" value="MANTENIMIENTO"/>
           </Properties>
           <Events>
             <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="mnuMantenimientoActionPerformed"/>
