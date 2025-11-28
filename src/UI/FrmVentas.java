@@ -22,7 +22,7 @@ import java.util.Vector;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 
-public class FrmVentas extends javax.swing.JFrame { //JFrame
+public class FrmVentas extends javax.swing.JInternalFrame { //JFrame
     
     DefaultTableModel dtm,dtml,dtml2,dtml3,dtml4,dtml5;
     Vector<det_venta> listaItem;
@@ -34,6 +34,14 @@ public class FrmVentas extends javax.swing.JFrame { //JFrame
     det_venta det;
     public FrmVentas() {
         initComponents();
+        
+        // Configuración típica de un JInternalFrame
+        this.setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
+        this.setClosable(true);
+        this.setIconifiable(true);
+        this.setMaximizable(true);
+        this.setResizable(true);
+        
         clie=new Cliente();
         cab=new cab_venta();
         det=new det_venta();
@@ -53,6 +61,8 @@ public class FrmVentas extends javax.swing.JFrame { //JFrame
         llenaTblActCabVenta(false,"");
         llenaTblActDetVenta(false,"");
         llenaCmbEstado();
+        
+        
     }
     
     private void llenaTblCliente(String cad){
@@ -1614,14 +1624,14 @@ public class FrmVentas extends javax.swing.JFrame { //JFrame
     this.tblActCabVenta.clearSelection();
     this.tblActDetVenta.clearSelection();
 }   
-  
-    public static void main(String args[]) {
+    
+    /*public static void main(String args[]) {*/
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
         /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
          * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
          */
-        try {
+        /*try {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
                 if ("Nimbus".equals(info.getName())) {
                     javax.swing.UIManager.setLookAndFeel(info.getClassName());
@@ -1636,17 +1646,18 @@ public class FrmVentas extends javax.swing.JFrame { //JFrame
             java.util.logging.Logger.getLogger(FrmVentas.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (javax.swing.UnsupportedLookAndFeelException ex) {
             java.util.logging.Logger.getLogger(FrmVentas.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        }
+        }*/
         //</editor-fold>
 
         /* Create and display the form */
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                new FrmVentas().setVisible(true);
-            }
-        });
-    }
-
+        /*java.awt.EventQueue.invokeLater(new Runnable() {*/
+            /*public void run() {*/
+                /*new FrmVentas().setVisible(true);*/
+            /*}*/
+        /*});*/
+    /*}*/
+    
+    
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnAgregar;
     private javax.swing.JButton btnBorrarDetalle;
