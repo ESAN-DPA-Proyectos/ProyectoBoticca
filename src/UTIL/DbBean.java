@@ -1,9 +1,10 @@
 package UTIL;
 import java.sql.*;
+
 public class DbBean {
     //String dbURL = "jdbc:sqlserver://localhost:1433;databaseName=BDBOTICCA";
     
-    String dbURL = "jdbc:sqlserver://server-bd-botica.database.windows.net:1433;"
+    String dbURL = "jdbc:sqlserver://server-bd-boticca.database.windows.net:1433;"
              + "database=BDBOTICCA;"
              + "encrypt=true;"
              + "trustServerCertificate=false;"
@@ -11,15 +12,15 @@ public class DbBean {
              + "loginTimeout=30;";
     
     
-    String dbDriver = "com.microsoft.sqlserver.jdbc.SQLServerDriver";
+    private String dbDriver = "com.microsoft.sqlserver.jdbc.SQLServerDriver";
     
     private Connection dbCon;
     //private String login = "sa";
     //private String password = "123456789"; 
     
     //Credemciales para Azure
-    private String login = "admin@server-bd-botica";
-    private String password = "admin123";
+    private String login = "adminbd";
+    private String password = "B0ticca2025#";
     
     public DbBean() {
         conecta();
